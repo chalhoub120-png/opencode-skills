@@ -1,0 +1,5 @@
+https://example.com
+search:best programming tutorials
+crawl: https://en.wikipedia.org/wiki/Python_(programming_language)
+https://httpbin.org/html
+https://example.org/

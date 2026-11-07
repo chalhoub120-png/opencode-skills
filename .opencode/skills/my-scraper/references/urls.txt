@@ -1,0 +1,3 @@
+https://example.com
+search: أفضل طرق تعلم البرمجة
+crawl: https://example.com

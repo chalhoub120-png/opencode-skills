@@ -1,0 +1,19 @@
+# My Scraper V3 (proposed) — example inputs
+# Lines: URL | search:<q> | crawl:<url> | feed:<url> | feed:<url> ::keywords
+# Lines starting with # are ignored.
+
+# --- Basic page scrape ---
+https://example.com
+https://en.wikipedia.org/wiki/Python_(programming_language)
+
+# --- Web search (English + Arabic, incl. legal & advertising research) ---
+search:legal research advertising content promotion
+search:أحدث التعديلات القانونية لبنان
+search:best content promotion strategies 2026
+
+# --- RSS/Atom feeds (NEW in V3) ---
+# English legal/news feeds:
+feed:https://feeds.bbci.co.uk/news/rss.xml ::legal court law advertising
+feed:https://feeds.bbci.co.uk/arabic/rss.xml ::قانون محكمة تشريع
+# Plain feed URL is auto-detected too:
+https://feeds.bbci.co.uk/arabic/rss.xml

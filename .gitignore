@@ -1,0 +1,31 @@
+# Secrets — never commit
+.env
+.env.*
+!.env.example
+**/secrets/**
+**/gcp-oauth.keys.json
+**/.gmail-mcp/**
+**/google-calendar-mcp/**
+**/mcp-auth.json
+*.key
+*.pem
+*secret*.json
+
+# Python / venv
+__pycache__/
+.venv/
+.venv-*/
+*.pyc
+*.pyo
+
+# Voice models (large, downloaded locally)
+ai-assistant/models/
+*.onnx
+*.onnx.json
+*.part
+
+# Temp / misc
+tmp/
+*.tmp
+.DS_Store
+my-scraper-v2-skill.zip

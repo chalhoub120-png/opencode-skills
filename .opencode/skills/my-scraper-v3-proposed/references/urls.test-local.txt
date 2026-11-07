@@ -1,0 +1,2 @@
+# Local test for V3 proposed skill
+https://example.com
