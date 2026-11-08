@@ -1,0 +1,23 @@
+{
+  "skill_name": "dashboard-builder",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "build me a dashboard from ./sales-2026-q1.csv — i want to see how we're trending vs last quarter, breakdown by channel, and which reps are performing best",
+      "expected_output": "Reads the CSV, inspects schema (date column, channel column, rep column, revenue measure), generates a self-contained HTML dashboard. Top strip with 3-6 KPIs (total revenue, vs prior period, deal count, avg deal size). Time-series chart of revenue. Breakdown charts by channel and by rep. Sortable detail table underneath. Filter controls (date range, channel). 2-4 bullet 'observations' from the data. Currency formatted as $X,XXX, percentages as +X.X%. No 3D or pie-with-many-slices.",
+      "files": ["./sales-2026-q1.csv"]
+    },
+    {
+      "id": 2,
+      "prompt": "i've got a folder of project tracking spreadsheets in ~/Work/projects/ — make me a dashboard that shows status across all of them, where we're behind, and total hours logged",
+      "expected_output": "Scans the folder, identifies the project files, aggregates across them. Generates a dashboard with: project status grid (color-coded green/yellow/red), total hours by project, behind-schedule callout, and a sortable table. Surfaces data quality issues at the top if any files have missing fields. Notes which projects haven't been updated recently.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "let me paste in some data — here's my personal expenses for the year by month and category, want to see spending patterns",
+      "expected_output": "Accepts pasted data (CSV, table, or structured text), parses it, and generates an interactive dashboard with: total spend KPIs (year, monthly avg, biggest single month), trend over time, breakdown by category (bar chart, not pie), top categories ranked, and 2-3 specific observations ('software spend tripled in Q3,' 'meal expenses spike before each cohort launch'). Filter by category or date range.",
+      "files": []
+    }
+  ]
+}

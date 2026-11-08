@@ -1,0 +1,23 @@
+{
+  "skill_name": "slide-deck",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "make me a slide deck on how compound interest actually works — audience is smart non-finance people, want it to feel a bit punchy not boring. 12-14 slides",
+      "expected_output": "Single self-contained HTML file (slides-compound-interest.html) saved to the working folder. 12-14 slides following the 5-act structure (title, hook, argument, payoff, close). One idea per slide, headings do the work, real numbers used (specific examples like $10K at 7% over 30 years = $76K). Visual style: light background, one accent color, generous whitespace, no bullet lists longer than 3 items. Includes keyboard navigation (arrows + spacebar), slide counter, scroll-snap, and a print/PDF stylesheet. After generating, tells user the file path and how to navigate.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "turn the contents of /Users/me/Documents/q3-strategy.md into an internal update deck for my team",
+      "expected_output": "Reads the source document, generates an internal-update style deck (TL;DR / metrics / what shipped / what's next / decisions needed) saved as HTML. Pulls actual content from the source rather than generating generic copy. Length matches the content (don't pad to a fake number of slides).",
+      "files": ["/Users/me/Documents/q3-strategy.md"]
+    },
+    {
+      "id": 3,
+      "prompt": "build me an investor pitch deck — we're a B2B SaaS in the workflow automation space, $800K ARR, raising a seed round. you have access to my BUSINESS_CONTEXT.md for the rest",
+      "expected_output": "Reads BUSINESS_CONTEXT.md, generates a 10-12 slide pitch deck following the pitch deck structure (problem / solution / market / traction / model / team / ask). Uses real numbers from the context file. Numbers get their own slide ($800K ARR is a hero slide, not a bullet). Visual style is confident and clean. Output is a single HTML file ready to present or export to PDF.",
+      "files": []
+    }
+  ]
+}

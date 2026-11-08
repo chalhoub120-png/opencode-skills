@@ -1,0 +1,23 @@
+{
+  "skill_name": "inbox-triage",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "go process my inbox — i've got like 30 unread from the last 24 hours and i need drafts for the ones that matter. tone should match how i normally write (you can scan my sent folder to learn it)",
+      "expected_output": "On first run, performs setup: scans last 50 sent emails to learn voice and last 100 received to identify top senders, asks user to confirm VIPs/urgent triggers/skip list, saves inbox-config.md. Then classifies each unread email (Reply / Quick reply / Flag / FYI / Archive / Spam), drafts replies for the first two categories as Gmail drafts (never sends), and produces an HTML report showing drafts created, items flagged for read, and a 'What I skipped' count.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "set up inbox triage to run 3x a day — 9am, 1pm, 5pm — and send me a slack notification when drafts are ready",
+      "expected_output": "Creates a recurring scheduled task with three daily firings, processes the inbox each time using existing inbox-config.md, and sends a Slack message on completion summarizing drafts created and items flagged.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "this email from a prospect needs a reply but i'm not sure what to say — they're asking about pricing for the 6-week program and whether we can do a custom proposal. draft me something in my voice",
+      "expected_output": "Reads the user's voice samples (sent folder or inbox-config.md), drafts a reply that addresses the pricing question directly and either commits to a custom proposal with a specific next step or asks the qualifying questions needed to scope one. Length matches the user's typical reply length. Saves as Gmail draft.",
+      "files": []
+    }
+  ]
+}

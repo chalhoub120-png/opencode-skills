@@ -1,0 +1,23 @@
+{
+  "skill_name": "decision-journal",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "log this: i'm deciding to kill the freemium tier and go paid-only starting next quarter. main reason is the freemium users are eating support time and never converting. considered keeping it free with rate limits or going free-for-X-days-then-paid",
+      "expected_output": "Creates decisions/YYYY-MM-DD-kill-freemium.md with structured fields (date, status: Active, reversibility assessment, revisit date), the decision, alternatives considered with why-not for each, what the user is betting on (specific beliefs that make this right), what would prove it wrong at 3/6/12 months (observable signals), links to any related past decisions found in the folder, and notes. Asks for clarification only on what's actually missing (e.g., 'what would change your mind?' if the user didn't articulate falsification criteria).",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "have i made a call like this before? thinking about whether to bring in a fractional CFO and want to check against past hiring decisions",
+      "expected_output": "Scans the decisions/ folder for hiring-related decisions and fractional/contractor decisions. Surfaces the relevant ones with: what was decided, reasoning at the time, outcome (if status is Validated or Refuted). Notes patterns across them ('you've consistently tilted toward fractional over full-time when the role is finance/ops adjacent'). Offers to log the current decision once the user is ready.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "do a review of my decisions from the last 6 months — patterns, what worked, what didn't",
+      "expected_output": "Generates decisions/review-YYYY-MM-DD.md with: 3-5 patterns observed across the window (specific, not flattering), decisions that worked (with what made them right), decisions that didn't (with honest reasoning on what was wrong about the original thinking), decisions due for revisit (status still Active past their revisit date), and 2-3 lessons worth carrying forward.",
+      "files": []
+    }
+  ]
+}

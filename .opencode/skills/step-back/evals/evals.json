@@ -1,0 +1,23 @@
+{
+  "skill_name": "step-back",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "hold on — let's take a step back. we've been deep in the weeds on this pricing model for like an hour and i'm starting to wonder if we even have the right framing",
+      "expected_output": "Produces a structured reflection saved as a markdown file (step-back-YYYY-MM-DD-HHMM.md) and a condensed version printed in chat. Sections: What we set out to do (restates original goal from conversation start), What we've actually been doing (3-5 bullets of the path taken), Assumptions made along the way (with why-assumed and if-wrong consequences), What we haven't considered, My read (one paragraph, picks one of: path sound, needs adjustment, or wrong — not all three), Suggested next move (one specific action).",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "sanity check this — am i overcomplicating this? i feel like there's a simpler way",
+      "expected_output": "Recognizes the user's doubt as a step-back trigger. Identifies what specifically may be overcomplicated by examining the recent conversation. Names the load-bearing assumption that's making things complex. Renders a clear verdict on whether simplification is warranted and proposes a specific simpler approach if so.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "before we go further, are we sure about the original premise here? feels like we anchored on something early and built on it without checking",
+      "expected_output": "Locates the original premise from the start of the conversation, traces how it was anchored, lists every load-bearing assumption that was built on it without verification. For each assumption, notes whether evidence has accumulated for or against it during the conversation. Makes a clear call: was the original premise correct, partially correct, or wrong. If wrong, names what the correct premise probably is.",
+      "files": []
+    }
+  ]
+}

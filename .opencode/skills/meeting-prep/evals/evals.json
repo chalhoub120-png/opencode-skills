@@ -1,0 +1,23 @@
+{
+  "skill_name": "meeting-prep",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "i've got a sales call in 45 minutes with sarah chen, VP of Marketing at Brightwave (B2B SaaS, series B). they reached out about our AI workflow consulting. prep me",
+      "expected_output": "Generates an HTML briefing dashboard saved to the working folder. Researches Brightwave (site, recent news, funding) and Sarah Chen (LinkedIn-level public info). Produces: top strip with one-sentence read on the meeting, who-they-are, primary/secondary outcomes for the user, what they probably want, 5 sharp questions to ask, watch-fors, suggested agenda, and sales-specific additions (likely objections, qualification checklist, proposed next step). Briefing reads in under 2 minutes.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "just got off a call with that investor — here are my rough notes. need a debrief and a follow-up email i can send today.\n\n- talked through ARR ($1.5M), growth slowing\n- they're interested but want to see Q1 numbers in 6 weeks\n- mentioned their fund typically writes $250-500K checks\n- partner i need to convince is mike (he wasn't there)\n- they want a deeper look at AI strategy memo i mentioned",
+      "expected_output": "Produces two artifacts: (1) meeting-debrief markdown file with summary, decisions, action items table (with proposed deadlines flagged as such), open questions, and flags; (2) a follow-up email draft saved as Gmail draft, opening with a specific appreciation line (not 'thanks for your time'), 2-3 bullet summary, agreed next steps, proposing the next checkpoint (sharing the AI strategy memo + Q1 numbers reschedule), and a single CTA. Tone is professional, concise, leaves them wanting more.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "podcast appearance tomorrow with the Founder Friction show, topic is how i'm using AI agents in my real business. prep me",
+      "expected_output": "Produces a podcast-specific briefing: 3 stories from the user's experience relevant to AI agents (pulled from BUSINESS_CONTEXT.md if it exists), the user's contrarian or surprising take on the topic, a natural one-liner about their business, 5 questions the host is likely to ask with sharp answers, and watch-fors specific to podcasting (don't over-explain, don't be too inside-baseball). Brief, scannable, designed to be read once 15 min before the call.",
+      "files": []
+    }
+  ]
+}

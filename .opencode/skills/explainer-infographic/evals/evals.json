@@ -1,0 +1,23 @@
+{
+  "skill_name": "explainer-infographic",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "build me an explainer for how a 30-year mortgage actually works — the interest math, why early payments are mostly interest, all that. audience is smart non-finance, my friend who's about to buy his first house",
+      "expected_output": "Single self-contained HTML file (explainer-mortgages.html) following the 5-beat structure: hook (the surprising fact about total interest paid), analogy (e.g., 'a mortgage is a backwards inheritance'), mechanism (3-7 sections explaining amortization, principal vs interest split over time, escrow), common misconceptions, and takeaway. Includes 2-3 interactive elements (e.g., a slider for loan amount + rate showing total interest paid). Uses real numbers (e.g., $500K at 7% = $1.2M over 30 years, $700K of which is interest). Mobile-friendly, vanilla JS, no external deps.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "explain how LLMs work visually — for our customer success team, they keep getting questions and i want them to actually understand what's happening under the hood",
+      "expected_output": "Generates an explainer HTML page using a strong analogy (e.g., 'predictive text on steroids' or 'a function that turns context into the next token') and carries it through the page. 5-beat structure with diagrams showing: token prediction at each step, the role of context window, what training actually optimizes for. Addresses common misconceptions ('LLMs search the internet,' 'LLMs reason'). One interactive element where the user can step through a token-by-token generation example.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "turn this concept into an infographic page — viral coefficient and how it drives growth",
+      "expected_output": "Recognizes the trigger phrase 'infographic page' and generates the HTML explainer. Hook leads with what makes viral coefficient interesting (small differences = wildly different outcomes). Real numbers (k=0.5 vs k=1.0 vs k=1.5 over 10 cycles). Interactive slider for k value showing growth curve in real time. Addresses misconception that 'viral growth' means high raw shares (vs the k=1 threshold).",
+      "files": []
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "skill_name": "brain-dump",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "ok dumping. been thinking about whether to hire a VA or keep doing the inbox myself, also need to figure out the Q3 content calendar, my cofounder mentioned he wants to revisit pricing — that's been bugging me for weeks tbh, oh and i should probably actually ship the lead magnet revamp before the next cohort launch. also the Sarah meeting on Thursday is going to be tough, i should think about what i actually want from it. and i keep meaning to set up better KPI tracking but never get to it",
+      "expected_output": "Scans the working folder for existing project files, past brain dumps, and decision logs. Produces a structured markdown file with: TL;DR paragraph, Projects (each with name + 3 next steps + connections to existing folder files), Tasks flat checklist, Decisions in flight (the VA hire, pricing revisit), Ideas worth keeping, Concerns noticed (the recurring pricing friction with cofounder, the avoided KPI work), Open questions, and a 'How I can help' menu of 3-5 specific actionable next moves.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "let me unload some stuff",
+      "expected_output": "Acknowledges the dump is incoming and waits for the user to actually paste/type/transcribe their thoughts. Does not start producing output yet. Does not ask clarifying questions before the dump arrives.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "[transcribed from a 2-min voice memo, rambly] ok so i've been thinking the cohort launch is going to be way more work than i estimated and i'm worried about the lead magnet not converting because the email sequence still feels generic, also need to figure out how to handle the daniel hire — he wants to start in 3 weeks but i haven't briefed the team yet, and the youtube schedule is going to take a hit during the cohort delivery weeks unless i batch ahead, oh also need to call my dad",
+      "expected_output": "Treats this as a complete brain dump despite the conversational tone. Produces the structured output with projects (cohort launch, lead magnet conversion, Daniel onboarding, YouTube batching), tasks (call dad), concerns (compounding workload risk), and a 'How I can help' menu with concrete actions like 'draft a Daniel onboarding plan,' 'audit the email sequence for genericness,' 'sketch a YouTube batch schedule for cohort weeks.'",
+      "files": []
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "skill_name": "workflow-visualizer",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "show me how all my cowork systems connect — skills, scheduled tasks, connectors, content folders. want to see the whole machine",
+      "expected_output": "Scans installed skills (~/.claude/skills/ or equivalent), active scheduled tasks, configured connectors, and key folders. Generates workflow-map-YYYY-MM-DD.html with an interactive node-and-edge diagram grouped by phase (Triggers, Inputs, Processing, Outputs, Storage). Color-coded by node type. Clickable nodes open detail panels. Filter/zoom/search controls. Pairs with workflow-summary.md explaining the system in prose (3-5 paragraph narrative, not a list), plus 'What's working,' 'What's stale' (zombie nodes), 'What's missing,' and 'Suggestions.' Surfaces installed-but-never-used skills explicitly.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "map out my content pipeline — from idea to youtube upload to repurposing across channels",
+      "expected_output": "Scoped to the content pipeline rather than full Cowork. Asks the user to walk through the workflow once if it's not already documented. Produces an HTML map with nodes for each step (idea capture, vet, package, hook, script, record, edit, upload, repurpose to shorts/X/LinkedIn) and edges showing the flow. Companion summary identifies bottlenecks and suggests automations.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "i feel like i've got a bunch of stuff installed that i don't actually use. surface the zombies",
+      "expected_output": "Generates the workflow map with an activity overlay (if usage data is available) coloring or sizing nodes by usage frequency. Companion summary leads with the 'What's stale' section, listing each likely-zombie node with the date it was installed and last evidence of use. Proposes specific removals. Does not soften the assessment.",
+      "files": []
+    }
+  ]
+}

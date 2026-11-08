@@ -1,0 +1,157 @@
+/* Carousel skill — brand-surface mode stylesheet.
+   Locked to context/brand/03-visual-identity.md. Do not edit per-run.
+   Every .slide is exactly 1080x1350 (4:5). render.mjs screenshots each one. */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800;900&display=swap');
+
+:root {
+  --bg: #F5F1E8;        /* off-white — default canvas */
+  --ink: #0F0F0F;       /* near-black — type and lines */
+  --teal: #2A6F6A;      /* accent — the brand fingerprint, one element per slide */
+  --gray: #A6A29A;      /* warm gray — secondary text, dividers */
+  --orange: #C75A2C;    /* burnt orange — rare data callout, <10% of slides */
+  --pad: 96px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #ddd;
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* --- the slide canvas --- */
+.slide {
+  width: 1080px;
+  height: 1350px;
+  background: var(--bg);
+  color: var(--ink);
+  padding: var(--pad);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+/* CTA / cover variant — inverted */
+.slide--teal { background: var(--teal); color: var(--bg); }
+.slide--teal .slide__footer,
+.slide--teal .kicker { color: rgba(245, 241, 232, 0.7); }
+
+/* --- type primitives --- */
+.kicker {
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--teal);
+}
+
+.title {
+  font-weight: 900;
+  font-size: 92px;
+  line-height: 1.04;
+  letter-spacing: -0.02em;
+}
+.title--lg { font-size: 116px; }
+.title--sm { font-size: 68px; }
+
+.body {
+  font-weight: 400;
+  font-size: 38px;
+  line-height: 1.4;
+  /* no explicit color — inherits ink on light slides, off-white on teal slides */
+}
+.body--gray { color: var(--gray); }
+
+/* one teal element per slide — use ONE of these per slide, not several */
+.accent { color: var(--teal); }
+.accent--orange { color: var(--orange); }
+.highlight {
+  background: var(--teal);
+  color: var(--bg);
+  padding: 0 0.18em;
+}
+
+/* --- layout helpers --- */
+.stack { display: flex; flex-direction: column; }
+.grow { flex: 1; }
+.center { justify-content: center; }
+.gap-sm > * + * { margin-top: 20px; }
+.gap-md > * + * { margin-top: 36px; }
+.gap-lg > * + * { margin-top: 56px; }
+
+.rule { height: 4px; width: 120px; background: var(--teal); border: 0; }
+
+/* --- big stat --- */
+.stat {
+  font-weight: 900;
+  font-size: 320px;
+  line-height: 0.9;
+  letter-spacing: -0.04em;
+  color: var(--teal);
+}
+.stat--orange { color: var(--orange); }
+
+/* --- numbered steps --- */
+.steps { display: flex; flex-direction: column; gap: 40px; }
+.step { display: flex; gap: 32px; align-items: flex-start; }
+.step__num {
+  flex: none;
+  width: 72px; height: 72px;
+  border: 4px solid var(--teal);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 36px; color: var(--teal);
+}
+.step__text { font-size: 40px; font-weight: 500; line-height: 1.3; padding-top: 6px; }
+
+/* --- quote --- */
+.quote {
+  font-weight: 800;
+  font-size: 76px;
+  line-height: 1.18;
+  letter-spacing: -0.02em;
+}
+.quote__mark { color: var(--teal); font-size: 76px; }
+
+/* --- two-column comparison --- */
+.compare { display: flex; gap: 40px; }
+.compare__col {
+  flex: 1;
+  border: 4px solid var(--ink);
+  padding: 44px;
+  display: flex; flex-direction: column; gap: 20px;
+}
+.compare__col--win { border-color: var(--teal); }
+.compare__label {
+  font-weight: 800; font-size: 32px;
+  text-transform: uppercase; letter-spacing: 0.08em;
+}
+.compare__col--win .compare__label { color: var(--teal); }
+
+/* --- embedded illustration (GPT Image (OpenAI) output) --- */
+.illus {
+  width: 100%;
+  display: block;
+  /* contain — illustration background is normalized to exactly --bg, so it
+     sits seamlessly on a light slide with no crop and no visible panel edge */
+  object-fit: contain;
+}
+.illus--grow { flex: 1; min-height: 0; }
+
+/* --- footer: handle + slide number --- */
+.slide__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 26px;
+  font-weight: 600;
+  color: var(--gray);
+  letter-spacing: 0.02em;
+}
+
+/* --- swipe affordance on the cover slide --- */
+.swipe { display: flex; align-items: center; gap: 14px; font-weight: 600; font-size: 30px; }
+.swipe__arrow { font-size: 38px; }

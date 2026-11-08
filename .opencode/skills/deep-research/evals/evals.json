@@ -1,0 +1,23 @@
+{
+  "skill_name": "deep-research",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "deep dive on the new Claude Skills feature from Anthropic — what is it, how does it work, how does it compare to other agent customization approaches, and whether it's actually a big deal",
+      "expected_output": "Produces research-claude-skills-YYYY-MM-DD.md with: TL;DR (3-4 sentences), What it is (plain English, 1-3 paragraphs), State of play (recent developments), Pros (specific strengths), Cons (honest limitations), Compared to alternatives (MCP, custom tool definitions, system prompts), What experts disagree on, My read (synthesis with a verdict), Sources (5-10 cited with one-line notes on why each matters), Open questions / gaps. Distinguishes facts from claims from interpretations. No hallucinated sources.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "tldr on Cursor vs Windsurf vs Cline — making a decision about which to invest team time in",
+      "expected_output": "Recognizes this is decision-support research and tilts the format accordingly: compressed descriptive sections, expanded comparison matrix (capabilities, pricing, integration, ecosystem, recent momentum), and a clear 'My read' verdict with reasoning. Sources cited, recent (notes dates of source material since this space moves fast).",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "catch me up on what's happened with the Stripe IPO rumors in the last 6 months",
+      "expected_output": "Quick-mode research with timeline-first structure (most important events ordered chronologically), key dates, current status (filed / not filed / rumored window), market context (other fintech IPOs, valuation comps), what's been confirmed vs speculation. Sources cited with dates. Honest about what's reported vs rumored vs unknown.",
+      "files": []
+    }
+  ]
+}

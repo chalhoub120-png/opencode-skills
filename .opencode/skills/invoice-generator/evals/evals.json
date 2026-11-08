@@ -1,0 +1,23 @@
+{
+  "skill_name": "invoice-generator",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "invoice Acme Corp $5,000 for the November consulting retainer — net 15",
+      "expected_output": "If invoice-config.md doesn't exist, runs first-time setup (business info, payment details, defaults, tax handling, invoice number format, currency, brand color). If it does exist, uses those defaults. Generates a single-page PDF (invoice-[number]-acme-corp.pdf) with: header (logo + INVOICE + auto-incremented number + dates), parties (From/Bill To), line items table ($5,000 consulting retainer for November), totals (with tax if applicable), payment section with methods, due date set to 15 days out. Updates invoice-log.md. Tells the user the file path and offers to draft an email to send it.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "invoice ABC Inc — 40 hours of design work at $150/hr, plus a $500 rush fee, due in 7 days",
+      "expected_output": "Generates an invoice with two line items: 40 hrs design work at $150/hr ($6,000) + $500 rush fee. Subtotal $6,500. Tax if config specifies. Total prominently displayed. Due date 7 days from today. If ABC Inc isn't in clients/, asks once for billing address and saves to clients/abc-inc.md for future invoices.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "set up a recurring invoice — Bright Studios pays me $4K/month retainer, first of the month, net 15",
+      "expected_output": "Generates the first invoice (auto-incrementing number, $4K retainer, dated 1st of next month, due 15 days after) and sets up a scheduled task that runs on the 1st of every month to auto-generate the next one. Saves Bright Studios as a client with retainer flag in clients/bright-studios.md. Confirms the schedule and explains how to pause or update the recurring task.",
+      "files": []
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "skill_name": "personal-crm",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "log a call i just had with sarah patel — we talked for 45 min about her doing a partnership with us, she's interested but wants to see usage data first, i committed to sending it by friday. also she mentioned her daughter just started kindergarten",
+      "expected_output": "If contacts/sarah-patel.md doesn't exist, creates it (asks for missing basics like role/company/tier). Adds a Recent Conversations entry with today's date, channel=call, what was discussed, the partnership angle. Updates Last Touch. Adds 'Send usage data by Friday' to Promises Made with the deadline. Updates Context section to note her daughter starting kindergarten (without being told to). Updates Next Action.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "who do i owe a follow-up to?",
+      "expected_output": "Scans all contact files for Promises Made and Next Action fields. Produces a follow-ups markdown grouped into Overdue (with days overdue), Due this week, and Coming up. Orders overdue items by how overdue. Each item shows the contact name and the specific commitment.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "who from my inner circle have i not talked to in a while? give me specific reasons to reach out, not generic 'check in'",
+      "expected_output": "Filters contacts to Inner tier with a Last Touch older than their stated Cadence. For each, generates a specific opener based on the Context section (e.g., 'ask how the funding round went — she mentioned it was closing in October,' or 'share the X article — he was working on a similar problem'). Does not produce generic 'check in' suggestions. Orders by relationship importance + how cold.",
+      "files": []
+    }
+  ]
+}

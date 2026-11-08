@@ -1,0 +1,23 @@
+{
+  "skill_name": "contract-review",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "review this MSA — we're the vendor, customer is a mid-sized enterprise, $80K/yr deal. attached is the redlined draft they sent back",
+      "expected_output": "Identifies contract type (MSA), establishes the user's side (vendor), and reviews the document with that lens. Output is a markdown review with: TL;DR (3-5 bullets including headline risks), Key terms in plain English, Red flags (with clause references and suggested fixes), Yellow flags, What's missing (e.g., termination for convenience, liability cap), Top 3-5 things to negotiate with suggested language, What looks fine, and 'Get a lawyer's eyes on' section for anything beyond the skill's competence. References specific clause numbers throughout.",
+      "files": ["./msa-redline.pdf"]
+    },
+    {
+      "id": 2,
+      "prompt": "is this NDA fair? it's mutual — i'm signing it before a partnership conversation with another founder",
+      "expected_output": "Reviews the NDA with mutual / NDA-specific lenses: duration check (3-5 yrs standard), definition of confidential info breadth, carve-outs (publicly known, independently developed, required by law), return/destruction terms, and watches for non-compete or non-solicit hidden in an NDA. Renders a clear verdict on whether it's fair as-is or needs adjustment, with specific items to push back on if any.",
+      "files": ["./nda.pdf"]
+    },
+    {
+      "id": 3,
+      "prompt": "check this contractor agreement — i'm hiring a contractor for $5K/month, 3-month engagement, they're handling some of my marketing work",
+      "expected_output": "Identifies as SOW/contractor agreement, user is the client. Reviews with contractor-specific lenses: scope creep protection, acceptance criteria, payment terms tied to deliverables, termination for convenience, IP ownership (critical for marketing work — who owns deliverables, does the contractor retain portfolio rights?), non-compete reasonableness. Output is the standard structured review with verdict and prioritized negotiation list.",
+      "files": []
+    }
+  ]
+}

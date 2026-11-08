@@ -1,0 +1,23 @@
+{
+  "skill_name": "expense-report",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "process my receipts in ~/Documents/receipts/november-2026/ — categorize them and give me a report for bookkeeping",
+      "expected_output": "Reads all receipts in the folder. On first run, scans a sample of 10-20 to propose categories and saves expense-config.md. Extracts vendor, date, amount, tax, payment method, line items. Categorizes each. Flags receipts that are unclear or duplicates. Produces three outputs: (1) expenses-2026-11.xlsx with sortable columns and a 'Flagged for review' sheet, (2) expense-dashboard-2026-11.html with headline KPIs, spend by category, time series, top vendors, trends, tax-relevant subtotals, (3) a short chat summary with total spend, biggest category, one specific observation, and file paths.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "can you run this every sunday and roll up the week? then at the end of the month give me the full report",
+      "expected_output": "Sets up two recurring scheduled tasks: weekly (Sunday) producing a short chat summary + updated spreadsheet, and monthly producing the full dashboard + report. Both use existing expense-config.md. Confirms the schedule.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "tax prep — get me a categorized expense report for the full year, broken out by what's deductible",
+      "expected_output": "Aggregates all receipts in the folder across the year. Generates expenses-2026.xlsx and expense-dashboard-2026.html with annual KPIs, full breakdown, and a clear tax-relevant subtotal (only categories marked deductible in expense-config.md). Flags anything anomalous (large single receipts, new vendors, suspicious patterns). Notes any gaps in data (months with low/no receipts that may indicate missing data).",
+      "files": []
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "skill_name": "morning-briefing",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "good morning — what's on my plate today? i've got the gmail and calendar connectors hooked up and i'd like the news section to track AI and SaaS specifically",
+      "expected_output": "An interactive HTML dashboard saved to the working folder with sections: today's schedule timeline, inbox snapshot (top 5 unread + flagged), Slack pulse if connector available, 3-5 news headlines on AI/SaaS with 'why it matters' notes, loose ends from yesterday, and a 'Today's one thing' synthesis. Plus a short Slack-ready summary printed in chat (under 600 chars). On first run, asks whether to save preferences to briefing-config.md for future runs.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "can you set me up to get this briefing every weekday at 7am? want it to ping me in slack too",
+      "expected_output": "Sets up a recurring scheduled task that runs Mon-Fri at 7am, generates the briefing HTML in a briefings/ subfolder dated by run, and posts the short summary to the user's Slack via connector. Confirms the schedule and tells the user where briefings will be saved.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "shape of the day pls",
+      "expected_output": "Recognizes this as a morning briefing trigger despite the casual phrasing. Generates the full dashboard + Slack summary using existing briefing-config.md if it exists, or runs first-time setup if not.",
+      "files": []
+    }
+  ]
+}
