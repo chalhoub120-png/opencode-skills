@@ -10,7 +10,6 @@ A robust rewrite of `my-scraper` that **never requires Firecrawl credits**, API 
 ## Why V2
 
 The original `my-scraper` (`scrape.py`) calls Firecrawl's `/scrape` and `/search` endpoints. It fails completely when:
-
 - No `FIRECRAWL_API_KEY` is set → `ERROR: the secret FIRECRAWL_API_KEY is empty or missing`
 - Credits exhausted → `ERROR 402 insufficient_credits`, `remaining_credits: 0`
 
@@ -60,7 +59,7 @@ python scripts/scraper.py --check
 ### Free path (`requests` only)
 
 1. **Scrape**: GET URL with browser UA headers → strip `<script>`/`<style>`/`<head>` → convert headings, lists, links, blockquotes, pre/code → unescape HTML entities → write Markdown.
-2. **Search (multi-source)**:
+2. **Search (multi-source)**: 
    - Primary: **DuckDuckGo Lite** GET `https://lite.duckduckgo.com/lite/?q=<query>` → parse `a.result-link` + `td.result-snippet` → top 8.
    - Fallbacks: DDG HTML POST `https://html.duckduckgo.com/html/`, then Brave GET, then Bing GET.
    - Last-resort fallback: **Wikipedia API** (`en/ar.wikipedia.org/w/api.php search`) — keyless, robust when search engines challenge the client IP (verified 2026-11-04). Results include Arabic titles for Arabic queries.
@@ -96,14 +95,14 @@ crawl: https://en.wikipedia.org/wiki/Python_(programming_language)
 
 ## Error handling
 
-| Situation                | Action                                                     |
-| ------------------------ | ---------------------------------------------------------- |
-| Missing/empty `urls.txt` | `ERROR: urls.txt not found` / `empty`, stop                |
-| Non-HTML response        | `SKIP non-HTML`, continue                                  |
-| HTTP error (4xx/5xx)     | `ERROR <status>: <body[:300]>`, continue                   |
-| Network error            | `ERROR: ConnectionError...`, continue                      |
+| Situation | Action |
+|---|---|
+| Missing/empty `urls.txt` | `ERROR: urls.txt not found` / `empty`, stop |
+| Non-HTML response | `SKIP non-HTML`, continue |
+| HTTP error (4xx/5xx) | `ERROR <status>: <body[:300]>`, continue |
+| Network error | `ERROR: ConnectionError...`, continue |
 | Playwright not installed | Auto-fallback to free path, log `WARN: Playwright missing` |
-| Empty Markdown result    | `WARN: short content (N chars)`                            |
+| Empty Markdown result | `WARN: short content (N chars)` |
 
 ## Example
 
