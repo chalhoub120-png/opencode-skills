@@ -290,7 +290,7 @@ def main() -> int:
     md = MarkItDown()
 
     if source.is_file():
-        dest_dir = Path(args.output) if args.output else source.parent / source.stem
+        dest_dir = (Path(args.output) if args.output else source.parent) / source.stem
         return EXIT_OK if convert_one(md, fitz, source, dest_dir) else EXIT_CONVERSION_FAILED
 
     # Directory / batch mode

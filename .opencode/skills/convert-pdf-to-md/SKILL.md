@@ -40,6 +40,23 @@ script itself will also fail with a clear pointer back to that file if a
 dependency turns out to be missing, so it's safe to just try the conversion
 first if you're reasonably confident setup was already done.
 
+### Isolated environment
+
+Dependencies (`markitdown[pdf]`, `pymupdf`) are installed in a dedicated virtual
+environment so they never touch the system Python:
+
+- Windows: `.venv\Scripts\python.exe`
+- macOS/Linux: `.venv/bin/python`
+
+Create it once per machine:
+
+```cmd
+python -m venv .venv
+.venv\Scripts\python.exe -m pip install -r scripts\requirements.txt
+```
+
+Then use that interpreter for every command below.
+
 ## Usage
 
 The conversion script lives at `scripts/convert_pdf_to_md.py`.
