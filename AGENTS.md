@@ -13,6 +13,9 @@
 Repository: https://github.com/obra/superpowers
 Repository: https://github.com/nathankim0/clean-architecture-skills
 Repository: https://github.com/anthropics/skills
+Repository: https://github.com/trailofbits/skills
+Repository: https://github.com/github/awesome-copilot
+Repository: https://github.com/devxit/graphify-me
 
 ---
 
@@ -32,7 +35,7 @@ Reference: https://github.com/obra/superpowers/tree/main/skills/systematic-debug
 Skill: root-cause-tracing
 Repository: obra/superpowers
 Source Repository: https://github.com/obra/superpowers
-(Note: this is a reference file inside `systematic-debugging`, not a standalone `SKILL.md`.)
+(Note: this is a reference file inside `systematic-debugging`, not a standalone `SKILL.md`. Installed locally at `.opencode/skills/systematic-debugging/root-cause-tracing.md`.)
 
 ---
 
@@ -52,23 +55,23 @@ Source Repository: https://github.com/obra/superpowers
 
 ---
 
-## Clean Architecture (مستهدفة — ليست مثبتة)
+## Clean Architecture (مثبّتة — 2026-11-09)
 
 Skill: clean-architecture
 Repository: nathankim0/clean-architecture-skills
 Path: plugins/clean-architecture/skills/clean-architecture
 Reference: https://github.com/nathankim0/clean-architecture-skills/tree/main/plugins/clean-architecture/skills/clean-architecture
-(Status: SKILL.md exists remotely; NOT installed locally. Install only after re-verifying SKILL.md in the discovered path at install time.)
+(Status: installed locally at `.opencode/skills/clean-architecture/SKILL.md`, name verified: `clean-architecture`.)
 
 ---
 
-## Clean Code / Refactoring (مستهدفة — ليست مثبتة)
+## Clean Code / Refactoring (مثبّتة — 2026-11-09)
 
 Skill: kent-beck-style
 Repository: nathankim0/clean-architecture-skills
 Path: plugins/kent-beck-style/skills/kent-beck-style
 Reference: https://github.com/nathankim0/clean-architecture-skills/tree/main/plugins/kent-beck-style/skills/kent-beck-style
-(Status: SKILL.md exists remotely; NOT installed locally.)
+(Status: installed locally at `.opencode/skills/kent-beck-style/SKILL.md`, name verified: `kent-beck-style`.)
 
 ---
 
@@ -81,21 +84,23 @@ Reference: https://github.com/anthropics/skills/tree/main/skills/webapp-testing
 
 ---
 
-## MCP Development (مستهدفة — لم تُثبَّت بعد)
+## MCP Development (مثبّتة — 2026-11-09)
 
 Skill: mcp-builder
 Repository: anthropics/skills
 Path: skills/mcp-builder
 Reference: https://github.com/anthropics/skills/tree/main/skills/mcp-builder
+(Status: installed with bundled `reference/` and `scripts/`.)
 
 ---
 
-## Skill Development (مستهدفة — لم تُثبَّت بعد)
+## Skill Development (مثبّتة — 2026-11-09)
 
 Skill: skill-creator
 Repository: anthropics/skills
 Path: skills/skill-creator
 Reference: https://github.com/anthropics/skills/tree/main/skills/skill-creator
+(Status: installed with bundled `agents/`, `assets/`, `eval-viewer/`, `references/`, `scripts/`.)
 
 ---
 
@@ -160,6 +165,16 @@ PASS / FAIL
 
 PASS / FAIL
 
+### آخر تحقق مقيس (2026-11-09)
+
+| الفحص           | الأمر/الأداة            | النتيجة                                                  |
+| --------------- | ----------------------- | -------------------------------------------------------- |
+| بنية المهارات   | `PyYAML` parse + scan   | 163 مجلد، 0 `SKILL.md` ناقص، 0 تكرار، 0 frontmatter تالف |
+| الملفات المرفقة | scan للمراجع النسبية    | 0 ناقص (عدا حالتين توثيقيتين)                            |
+| صحة السكربتات   | `py_compile` (42 ملف)   | 0 فشل                                                    |
+| تحميل المهارات  | جلسة OpenCode           | 4 مهارات جديدة ظهرت محمّلة                               |
+| المزامنة        | `git status` + `gh api` | 0 تعديل غير محفوظ، 163 = 163                             |
+
 Do not claim success without evidence.
 Do not skip testing.
 Do not skip verification.
@@ -170,16 +185,31 @@ No fix without root-cause analysis.
 # القائمة النهائية الموثوقة
 
 systematic-debugging → Debugging
-root-cause-tracing → Root Cause Analysis
+root-cause-tracing → Root Cause Analysis (ملف مرجعي داخل `systematic-debugging`)
 test-driven-development → TDD
 using-git-worktrees → Git Workflow
-clean-architecture → Architecture & Dependencies (مستهدفة)
-kent-beck-style → Clean Code & Refactoring (مستهدفة)
+clean-architecture → Architecture & Dependencies (مثبّتة)
+kent-beck-style → Clean Code & Refactoring (مثبّتة)
 webapp-testing → Testing Automation (مثبّتة)
-mcp-builder → MCP & Tool Integration (مستهدفة)
-skill-creator → إنشاء مهارات جديدة (مستهدفة)
+mcp-builder → MCP & Tool Integration (مثبّتة)
+skill-creator → إنشاء مهارات جديدة (مثبّتة)
 
 هذه هي المهارات التي أمكن تأكيد مستودعاتها ومساراتها علناً من المصادر التي تم التحقق منها.
+
+---
+
+## حالة التثبيت المقيسة (2026-11-09)
+
+قياس فعلي على `.opencode/skills/` وليس تقديرًا:
+
+- المجلدات: **163** (كانت 159 قبل إضافة الأربع المستهدفة).
+- بدون `SKILL.md`: **0**.
+- أسماء مكررة: **0** (163 اسمًا فريدًا).
+- frontmatter تالف أو `description` ناقص: **0** (تحليل YAML فعلي، مع تسامح BOM).
+- ملفات مرفقة ناقصة: **0** باستثناء حالتين توثيقيتين لا تؤثران على التشغيل:
+  - `my-scraper-v2` يشير إلى `scripts/scrape.py` بينما الملف الفعلي `scripts/scraper.py`.
+  - `zeroize-audit` يشير إلى قالب `phase-{N}-{name}.md` (عنصر نائب لا ملف).
+- المهارات المثبّتة حديثًا ظهرت محمّلة في جلسة OpenCode: `clean-architecture`, `kent-beck-style`, `mcp-builder`, `skill-creator`.
 
 ---
 
@@ -197,6 +227,10 @@ skill-creator → إنشاء مهارات جديدة (مستهدفة)
 | بوابة الإنجاز          | `verification-before-completion`                   |
 | التوازي                | `dispatching-parallel-agents`                      |
 | تشخيص جلسة فاشلة       | `diagnosing-superpowers`                           |
+| توثيق المعمارية        | `clean-architecture`                               |
+| جودة الكود والتفكيك    | `kent-beck-style`                                  |
+| بناء خادم MCP          | `mcp-builder`                                      |
+| إنشاء/تحسين مهارة      | `skill-creator`                                    |
 | تسليم الفرع            | `finishing-a-development-branch`                   |
 
 القواعد العامة للنظام ممثَّلة في المهارات لا الإثباتات المعلّقة — عند التعارض تُقدَّم التهيئة المحددة لا العامة. `superpowers-systematic-debugging` **لا تُثبَت** — أسماءك الفعلية حاليًا بلا بادِئات (`systematic-debugging`، `test-driven-development` …)، وليس بصيغة `{repo}-{skill}` التي صُمّمت للتجريد الأصيلية.
@@ -226,7 +260,7 @@ skill-creator → إنشاء مهارات جديدة (مستهدفة)
 - حاجز عن تسرّب الإطار (framework) إلى المجال.
 - الطبقات: **domain** ← **application** ← **infrastructure**.
 - لا تسمح لمنحنى العمل بتبعية إطار.
-- `clean-architecture` هي **مهارة مستهدفة** — قواعد هذه القسم مُلخَّصة من وثائقها، فهي توجيه وليست مهارة مثبتة بعد.
+- `clean-architecture` مهارة **مثبّتة** الآن؛ شغّلها عند أي مراجعة معمارية بدل الاعتماد على الذاكرة.
 
 ## قواعد خاصة بلغة المشروع
 
