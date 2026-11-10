@@ -1,0 +1,4 @@
+invoice_no,date,vendor,description,subtotal,vat_rate,vat_amount,total,currency
+2026-0001,2026-09-03,Alrajhi Bank,Office rent Sep,1500,15%,225,1725,SAR
+2026-0002,2026-09-10,STC,Internet service,150,15%,22.5,172.5,SAR
+2026-0003,2026-09-15,SEC,Electricity bill,220,15%,33,253,SAR

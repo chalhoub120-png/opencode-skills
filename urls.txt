@@ -1,0 +1,7 @@
+https://example.com
+search: أفضل طرق تعلم البرمجة
+crawl: https://example.com
+# اختبار إضافي - صفحات ثابتة مجانية
+https://httpbin.org/html
+https://example.org/
+https://en.wikipedia.org/wiki/Python_(programming_language)

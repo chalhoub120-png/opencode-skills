@@ -1,0 +1,104 @@
+{
+  "name": "GitHub Monitoring",
+  "nodes": [
+    {
+      "parameters": {
+        "cronExpression": "*/15 * * * *"
+      },
+      "id": "schedule",
+      "name": "Schedule (15 min)",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "operation": "list",
+        "repository": "={{ $json.repository }}",
+        "state": "open"
+      },
+      "id": "fetchPRs",
+      "name": "Fetch Open PRs",
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1,
+      "position": [460, 300],
+      "credentials": { "github": "github-cred" },
+      "retryOnFail": true,
+      "maxRetries": 3,
+      "retryWait": 10000
+    },
+    {
+      "parameters": {
+        "text": "PR #{{ $json.number }}: {{ $json.title }}\n{{ $json.body }}\nRepository: {{ $json.repository }}",
+        "workflowId": "opencode-code-review",
+        "data": { "pr": "={{ $json }}", "action": "review" }
+      },
+      "id": "opencodeReview",
+      "name": "OpenCode Code Review",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [680, 300],
+      "authentication": {
+        "genericAuthType": "header",
+        "header": {
+          "name": "Authorization",
+          "value": "=Bearer {{$credentials.opencodeApiKey}}"
+        }
+      },
+      "retryOnFail": true,
+      "maxRetries": 3,
+      "retryWait": 5000
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "table": "audit_logs",
+        "data": {
+          "user_id": "={{ $json.review_requested_by }}",
+          "action": "github:pr_reviewed",
+          "resource": "pull_request",
+          "resource_id": "={{ $json.number }}",
+          "metadata": {
+            "repository": "={{ $json.repository }}",
+            "status": "={{ $json.status }}"
+          }
+        }
+      },
+      "id": "auditLog",
+      "name": "Audit Log Review",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [900, 300],
+      "credentials": { "postgres": "postgres-cred" }
+    },
+    {
+      "parameters": {
+        "text": "نتيجة مراجعة الكود:\n{{ $json.review_summary }}\nالحالة: {{ $json.status }}",
+        "channel": "telegram",
+        "chatId": "={{ $json.notify_chat_id }}"
+      },
+      "id": "notifyReview",
+      "name": "Notify Review Result",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [1120, 300],
+      "credentials": { "telegram": "telegram-cred" }
+    }
+  ],
+  "connections": {
+    "Fetch Open PRs": {
+      "main": [[{ "node": "OpenCode Code Review", "type": "main", "index": 0 }]]
+    },
+    "OpenCode Code Review": {
+      "main": [[{ "node": "Audit Log Review", "type": "main", "index": 0 }]]
+    },
+    "Audit Log Review": {
+      "main": [[{ "node": "Notify Review Result", "type": "main", "index": 0 }]]
+    },
+    "Schedule (15 min)": {
+      "main": [[{ "node": "Fetch Open PRs", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {},
+  "id": "github-monitoring-workflow"
+}

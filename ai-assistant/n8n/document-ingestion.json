@@ -1,0 +1,150 @@
+{
+  "name": "Document Ingestion",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "document-webhook",
+        "responseMode": "onReceived"
+      },
+      "id": "webhook",
+      "name": "Document Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const src = ($json && $json.body && typeof $json.body === 'object') ? $json.body : ($json || {});\nconst token = ($env.DOC_INGEST_TOKEN || '').trim();\nif (!token) { throw new Error('DOC_INGEST_TOKEN is not configured'); }\nconst headers = ($json && $json.headers) ? $json.headers : {};\nif (String(headers['x-ingest-token'] || '').trim() !== token) { throw new Error('Unauthorized'); }\n\nconst allowed = ($env.DOC_INGEST_ALLOWED_HOSTS || '').split(',').map((h) => h.trim().toLowerCase()).filter(Boolean);\nif (!allowed.length) { throw new Error('DOC_INGEST_ALLOWED_HOSTS is not configured'); }\n\nconst rawUrl = String(src.file_url || '').trim();\nlet parsed;\ntry { parsed = new URL(rawUrl); } catch (e) { throw new Error('Invalid file_url'); }\nif (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') { throw new Error('Blocked URL scheme'); }\nif (allowed.indexOf(parsed.hostname.toLowerCase()) === -1) { throw new Error('Host not allowed: ' + parsed.hostname); }\nconst blocked = /^(localhost|127\\.|0\\.0\\.0\\.0|10\\.|192\\.168\\.|169\\.254\\.|172\\.(1[6-9]|2\\d|3[01])\\.|\\[?::1\\]?)/i;\nif (blocked.test(parsed.hostname)) { throw new Error('Private address blocked'); }\n\nconst rawName = String(src.filename || '').trim();\nconst base = rawName.split(/[\\\\/]/).pop().replace(/[^A-Za-z0-9._-]/g, '_').replace(/^\\.+/, '');\nif (!base || base.length > 128) { throw new Error('Invalid filename'); }\nif (!/\\.(pdf|docx?|xlsx?|pptx?|txt|md|csv|json)$/i.test(base)) { throw new Error('File extension not allowed'); }\n\nconst dir = 'uploads/' + Date.now() + '-' + Math.random().toString(36).slice(2, 10);\nreturn [{ json: Object.assign({}, src, { file_url: parsed.toString(), filename: base, file_path: dir + '/' + base }) }];"
+      },
+      "id": "validateInput",
+      "name": "Validate & Sanitize",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [350, 300]
+    },
+    {
+      "parameters": {
+        "rule": "time",
+        "time": "3600000",
+        "operation": "deduplicate"
+      },
+      "id": "dedup",
+      "name": "Duplicate Protection",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "fileUrl": "={{ $json.file_url }}",
+        "binaryProperty": "file"
+      },
+      "id": "downloadFile",
+      "name": "Download File",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [680, 300],
+      "options": { "responseFormat": "binary" },
+      "retryOnFail": true,
+      "maxRetries": 3,
+      "retryWait": 5000
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "filePath": "={{ $json.file_path }}",
+        "binaryProperty": "file"
+      },
+      "id": "saveFile",
+      "name": "Save File",
+      "type": "n8n-nodes-base.writeBinaryFile",
+      "typeVersion": 1,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "filePath": "={{ $json.file_path }}",
+        "projectId": "={{ $json.project_id }}",
+        "language": "={{ $json.language || 'ar' }}"
+      },
+      "id": "ingestRAG",
+      "name": "Ingest to RAG",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [1120, 300],
+      "authentication": {
+        "genericAuthType": "header",
+        "header": {
+          "name": "Authorization",
+          "value": "=Bearer {{$credentials.opencodeApiKey}}"
+        }
+      },
+      "retryOnFail": true,
+      "maxRetries": 3,
+      "retryWait": 5000
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "table": "audit_logs",
+        "data": {
+          "user_id": "={{ $json.uploaded_by }}",
+          "action": "document:ingested",
+          "resource": "document",
+          "resource_id": "={{ $json.filename }}",
+          "metadata": {
+            "project_id": "={{ $json.project_id }}",
+            "language": "={{ $json.language || 'ar' }}"
+          }
+        }
+      },
+      "id": "auditLog",
+      "name": "Audit Log Ingestion",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [1340, 300],
+      "credentials": { "postgres": "postgres-cred" }
+    },
+    {
+      "parameters": {
+        "text": "تم استيراد المستند {{ $json.filename }} بنجاح إلى قاعدة المعرفة.",
+        "channel": "telegram",
+        "chatId": "={{ $env.DOC_INGEST_CHAT_ID }}"
+      },
+      "id": "notifyIngest",
+      "name": "Notify Ingestion",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [1560, 300],
+      "credentials": { "telegram": "telegram-cred" }
+    }
+  ],
+  "connections": {
+    "Duplicate Protection": {
+      "main": [[{ "node": "Download File", "type": "main", "index": 0 }]]
+    },
+    "Download File": {
+      "main": [[{ "node": "Save File", "type": "main", "index": 0 }]]
+    },
+    "Save File": {
+      "main": [[{ "node": "Ingest to RAG", "type": "main", "index": 0 }]]
+    },
+    "Ingest to RAG": {
+      "main": [[{ "node": "Audit Log Ingestion", "type": "main", "index": 0 }]]
+    },
+    "Audit Log Ingestion": {
+      "main": [[{ "node": "Notify Ingestion", "type": "main", "index": 0 }]]
+    },
+    "Document Webhook": {
+      "main": [[{ "node": "Validate & Sanitize", "type": "main", "index": 0 }]]
+    },
+    "Validate & Sanitize": {
+      "main": [[{ "node": "Duplicate Protection", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {},
+  "id": "document-ingestion-workflow"
+}

@@ -1,0 +1,110 @@
+{
+  "name": "WhatsApp Integration",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "whatsapp-webhook",
+        "responseMode": "onReceived"
+      },
+      "id": "webhook",
+      "name": "WhatsApp Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "rule": "time",
+        "time": "30000",
+        "operation": "deduplicate"
+      },
+      "id": "dedup",
+      "name": "Duplicate Protection",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.Body }}",
+        "userId": "={{ $json.From }}",
+        "language": "auto",
+        "conversationId": "={{ $json.From }}"
+      },
+      "id": "processChat",
+      "name": "Process via Orchestrator",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [680, 300],
+      "authentication": {
+        "genericAuthType": "header",
+        "header": {
+          "name": "Authorization",
+          "value": "=Bearer {{$credentials.opencodeApiKey}}"
+        }
+      },
+      "retryOnFail": true,
+      "maxRetries": 3,
+      "retryWait": 5000
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.answer }}",
+        "to": "={{ $json.From }}",
+        "from": "={{ $json.To }}"
+      },
+      "id": "sendReply",
+      "name": "Send WhatsApp Reply",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [900, 300],
+      "authentication": {
+        "genericAuthType": "header",
+        "header": {
+          "name": "Authorization",
+          "value": "=Bearer {{$credentials.twilioApiKey}}"
+        }
+      },
+      "retryOnFail": true,
+      "maxRetries": 3,
+      "retryWait": 5000
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "table": "audit_logs",
+        "data": {
+          "user_id": "={{ $json.From }}",
+          "action": "whatsapp:message_received",
+          "resource": "message",
+          "metadata": { "from": "={{ $json.From }}", "to": "={{ $json.To }}" }
+        }
+      },
+      "id": "auditLog",
+      "name": "Audit Log Message",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [900, 500],
+      "credentials": { "postgres": "postgres-cred" }
+    }
+  ],
+  "connections": {
+    "Duplicate Protection": {
+      "main": [
+        [{ "node": "Process via Orchestrator", "type": "main", "index": 0 }]
+      ]
+    },
+    "Process via Orchestrator": {
+      "main": [
+        [{ "node": "Send WhatsApp Reply", "type": "main", "index": 0 }],
+        [{ "node": "Audit Log Message", "type": "main", "index": 0 }]
+      ]
+    },
+    "WhatsApp Webhook": {
+      "main": [[{ "node": "Duplicate Protection", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {},
+  "id": "whatsapp-workflow"
+}

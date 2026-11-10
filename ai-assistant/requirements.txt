@@ -1,0 +1,27 @@
+fastapi==0.162.0
+uvicorn==0.54.0
+httpx==0.28.1
+asyncpg==0.32.0
+pydantic==2.14.3
+pydantic-settings==2.16.2
+python-jose[cryptography]==3.5.0
+python-multipart==0.0.33
+qdrant-client==1.20.0
+openpyxl==3.1.5
+python-docx==1.2.0
+pypdf==6.21.4
+python-pptx==1.0.2
+pyjwt==2.15.1
+websockets==17.4
+jinja2==3.1.6
+certifi==2026.10.23
+
+# Voice - openai-whisper is the primary STT engine (faster-whisper is optional fallback)
+# Deferred from Docker build: sdist download stalls on flaky build network; voice is optional, text/chat works without it.
+# Re-enable when build network is stable: openai-whisper>=20240927
+# openai-whisper>=20240927
+faster-whisper>=1.0.0
+
+# Optional TTS
+# kokoro>=0.8.0  # install when model available
+# piper-tts>=1.1.0  # install when model available

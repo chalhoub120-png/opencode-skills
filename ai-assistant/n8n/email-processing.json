@@ -1,0 +1,173 @@
+{
+  "name": "Email Processing",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "email-webhook",
+        "responseMode": "onReceived"
+      },
+      "id": "webhook",
+      "name": "Email Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "rule": "time",
+        "time": "60000",
+        "operation": "deduplicate"
+      },
+      "id": "dedup",
+      "name": "Duplicate Protection",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "get",
+        "messageId": "={{ $json.message_id }}"
+      },
+      "id": "getEmail",
+      "name": "Get Email",
+      "type": "n8n-nodes-base.imap",
+      "typeVersion": 1,
+      "position": [680, 300],
+      "credentials": { "imapOAuth2": "imap-cred" }
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.text }}",
+        "workflowId": "dify-email-classification",
+        "data": { "email": "={{ $json }}", "language": "auto" }
+      },
+      "id": "difyClassify",
+      "name": "Classify via Dify",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [900, 300],
+      "authentication": {
+        "genericAuthType": "header",
+        "header": {
+          "name": "Authorization",
+          "value": "=Bearer {{$credentials.difyApiKey}}"
+        }
+      },
+      "retryOnFail": true,
+      "maxRetries": 3,
+      "retryWait": 5000
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "table": "approval_requests",
+        "data": {
+          "user_id": "={{ $json.user_id }}",
+          "action_type": "email:create_task",
+          "target_resource": "task",
+          "parameters": {
+            "classification": "={{ $json.classification }}",
+            "email_id": "={{ $json.message_id }}"
+          },
+          "status": "pending"
+        }
+      },
+      "id": "createApproval",
+      "name": "Request Human Approval",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [1120, 300],
+      "credentials": { "postgres": "postgres-cred" }
+    },
+    {
+      "parameters": {
+        "condition": "={{ $json.status === 'approved' }}",
+        "true": [],
+        "false": []
+      },
+      "id": "approvalGate",
+      "name": "Approval Gate",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "table": "tasks",
+        "data": {
+          "title": "={{ $json.classification.subject }}",
+          "description": "={{ $json.classification.summary }}",
+          "status": "pending",
+          "priority": "={{ $json.classification.priority }}",
+          "source": "email"
+        }
+      },
+      "id": "createTask",
+      "name": "Create Task (Approved)",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [1560, 200],
+      "credentials": { "postgres": "postgres-cred" }
+    },
+    {
+      "parameters": {
+        "text": "تم إنشاء المهمة بناءً على الإيميل.w awaiting approval.",
+        "channel": "telegram",
+        "chatId": "={{ $json.user_telegram_id }}"
+      },
+      "id": "notifyPending",
+      "name": "Notify Pending Approval",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [1560, 400],
+      "credentials": { "telegram": "telegram-cred" }
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.classification.notification_message }}",
+        "channel": "telegram",
+        "chatId": "={{ $json.user_telegram_id }}"
+      },
+      "id": "notify",
+      "name": "Notify User",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [1560, 600],
+      "credentials": { "telegram": "telegram-cred" }
+    }
+  ],
+  "connections": {
+    "Duplicate Protection": {
+      "main": [[{ "node": "Get Email", "type": "main", "index": 0 }]]
+    },
+    "Get Email": {
+      "main": [[{ "node": "Classify via Dify", "type": "main", "index": 0 }]]
+    },
+    "Classify via Dify": {
+      "main": [
+        [{ "node": "Request Human Approval", "type": "main", "index": 0 }]
+      ]
+    },
+    "Request Human Approval": {
+      "main": [[{ "node": "Approval Gate", "type": "main", "index": 0 }]]
+    },
+    "Approval Gate": {
+      "main": [
+        [{ "node": "Create Task (Approved)", "type": "main", "index": 0 }],
+        [{ "node": "Notify Pending Approval", "type": "main", "index": 0 }]
+      ]
+    },
+    "Create Task (Approved)": {
+      "main": [[{ "node": "Notify User", "type": "main", "index": 0 }]]
+    },
+    "Email Webhook": {
+      "main": [[{ "node": "Duplicate Protection", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {},
+  "id": "email-processing-workflow"
+}

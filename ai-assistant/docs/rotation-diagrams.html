@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>تدوير DB + معمارية النظام — رسم بياني</title>
+<style>
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;max-width:1100px;margin:32px auto;padding:0 20px;background:#f8fafc;color:#0f172a;line-height:1.7}
+  h1{font-size:28px} h2{font-size:22px;margin-top:36px;border-bottom:2px solid #cbd5e1;padding-bottom:6px}
+  .card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:20px;margin:16px 0}
+  pre.mermaid{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:20px;overflow:auto;text-align:left;direction:ltr}
+  code{background:#f1f5f9;padding:2px 6px;border-radius:6px} pre code{background:none;padding:0}
+  .note{background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:12px 16px}
+  .ok{background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:12px 16px}
+  .bad{background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:12px 16px}
+</style>
+</head>
+<body>
+<h1>رسم بياني دقيق — الطريقة الكاملة (بدون حذف volume)</h1>
+<p>الجهاز يقاس هنا: <b>RAM 32GB</b> + <b>Intel i7-1260P</b> + <b>Intel Iris Xe 2GB</b> فقط. لا NVIDIA. أي مقياس GPU = <b>BLOCKED</b>.</p>
+
+<h2>1) تدوير كلمة مرور Postgres (Flowchart)</h2>
+<div class="card">
+<pre class="mermaid">
+flowchart TD
+    A["PowerShell في<br/>C:\\Users\\user\\Documents\\Default Project\\ai-assistant"] --> B["تحقق باك-أب<br/>Get-Item ai_backup_pre_rotate.dump<br/>docker exec ai-postgres pg_isready"]
+    B --> C{"الباك-أب موجود؟<br/>107KB"}
+    C -->|لا| A
+    C -->|نعم| D["psql تفاعلي<br/>docker exec -it ai-postgres psql -U ai -d ai<br/>\\password ai<br/>باسورد جديد A-Z a-z 0-9 فقط"]
+    D --> E{"ALTER ROLE؟"}
+    E -->|فشل| D
+    E -->|نجح| F["Notepad .env<br/>حدّث DATABASE_URL + POSTGRES_PASSWORD<br/>لا تُشاركه في الشات"]
+    F --> G["إعادة إنشاء الخدمات فقط<br/>docker compose up -d --force-recreate opencode-orchestrator"]
+    G --> H{"logs: Uvicorn running<br/>بلا password failed؟"}
+    H -->|لا| F
+    H -->|نعم| I["اختبر<br/>python test_all_endpoints.py<br/>ALL TESTS PASSED"]
+    I --> J["الآن أزيل fallback ai123 نهائيًا<br/>${DATABASE_URL:?}"]
+</pre>
+</div>
+
+<h3>تسلسل الحدوث (Sequence)</h3>
+<div class="card">
+<pre class="mermaid">
+sequenceDiagram
+    participant U as أنت (PowerShell)
+    participant C as Docker
+    participant P as ai-postgres
+    participant O as ai-orchestrator
+    U->>C: pg_dump (باك-أب 107KB)
+    U->>C: docker exec -it ai-postgres psql -U ai -d ai -c "\\password ai"
+    C->>P: ALTER ROLE (باسورد جديد)
+    P-->>U: ALTER ROLE
+    U->>U: Notepad .env → حدّث (VAK-&#60;redacted&#62;)
+    U->>C: docker compose up -d --force-recreate opencode-orchestrator
+    C->>O: env DATABASE_URL=VAK-&#60;redacted&#62;
+    O->>P: asyncpg connect
+    P-->>O: اتصال ناجح
+    U->>O: POST /chat (demo-key-001)
+    O-->>U: 200 OK
+</pre>
+</div>
+
+<div class="bad">لا تستخدم <code>docker compose down -v</code> — سيحذف الـ volumes والبيانات.</div>
+
+<h2>2) معمارية النظام + حدود الثقة</h2>
+<div class="card">
+<pre class="mermaid">
+flowchart LR
+    subgraph HOST["مضيف Windows"]
+        BROWSER["متصفح / سكربت<br/>127.0.0.1:8100"]
+        OLL["Ollama (مضيف)<br/>gemma4:e2b / deepseek-r1:14b<br/>100% CPU"]
+    end
+    subgraph DOCKER["حاويات Docker"]
+        ORCH["ai-orchestrator<br/>cap_drop ALL<br/>mem 2g cpus 2.0"]
+        PG[("ai-postgres")]
+        QDR[("ai-qdrant")]
+        RED[("ai-redis")]
+        ORCH --> PG
+        ORCH --> QDR
+        ORCH --> RED
+    end
+    BROWSER -- "localhost + X-API-Key" --> ORCH
+    ORCH -.-> "host.docker.internal:11434" --> OLL
+    ORCH -.-> "DATABASE_URL=VAK-<redacted>" -.-> PG
+</pre>
+</div>
+
+<h2>3) الطريقة الكاملة — 6 خطوات</h2>
+<div class="card">
+<pre class="mermaid">
+flowchart TD
+    S1["1. باك-أب<br/>pg_dump → 107KB"] --> S2["2. تدوير DB<br/>\\password + Notepad .env<br/>(VAK-&#60;redacted&#62;)"]
+    S2 --> S3{"test_all PASS؟"}
+    S3 -->|لا| S2
+    S3 -->|نعم| S4["4. التضمين<br/>ollama pull nomic-embed-text<br/>(بموافقتك ~274MB)"]
+    S4 --> S5["5. rebuild Qdrant<br/>768d ≠ 1024d"]
+    S5 --> S6["6. اختبار CPU 1→2→4<br/>load_test_cpu.py"]
+    S6 --> END["نتيجة: PASSED / FAILED / SKIPPED / BLOCKED<br/>40 طلبًا: UNVERIFIED"]
+</pre>
+</div>
+
+<h2>أين وكيف (PowerShell)</h2>
+<div class="card">
+<pre><code>cd C:\Users\user\Documents\Default Project\ai-assistant
+docker exec -it ai-postgres psql -U ai -d ai -c "\password ai"
+notepad .env
+docker compose up -d --force-recreate opencode-orchestrator
+.\.venv\Scripts\python.exe test_all_endpoints.py
+ollama pull nomic-embed-text
+.\.venv\Scripts\python.exe scripts/load_test_cpu.py --concurrency 1,2,4 --model gemma4:e2b</code></pre>
+</div>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: true, theme: 'default', flowchart: { htmlLabels: true } });
+</script>
+</body>
+</html>

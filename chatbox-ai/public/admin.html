@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chatbox AI - Admin Panel</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="css/admin.css" />
+  </head>
+  <body>
+    <!-- Admin Sidebar -->
+    <aside class="admin-sidebar">
+      <div class="admin-brand">
+        <a href="#" class="admin-logo">Chatbox<span>.ai</span></a>
+        <div class="admin-subtitle">لوحة التحكم</div>
+      </div>
+
+      <nav class="admin-nav">
+        <button class="admin-nav-item active" data-section="dashboard">
+          <span>📊</span> لوحة المعلومات
+        </button>
+        <button class="admin-nav-item" data-section="users">
+          <span>👥</span> المستخدمون
+        </button>
+        <button class="admin-nav-item" data-section="conversations">
+          <span>💬</span> المحادثات
+        </button>
+        <button class="admin-nav-item" data-section="settings">
+          <span>⚙️</span> الإعدادات
+        </button>
+      </nav>
+
+      <div class="admin-footer">
+        <button class="admin-logout" id="admin-logout">تسجيل الخروج</button>
+        <div class="admin-user-info" id="admin-user-info"></div>
+      </div>
+    </aside>
+
+    <!-- Admin Main Content -->
+    <main class="admin-main">
+      <header class="admin-header">
+        <h1 id="admin-page-title">لوحة المعلومات</h1>
+        <div class="admin-header-actions">
+          <a href="/" class="btn btn-outline">العودة للموقع</a>
+        </div>
+      </header>
+
+      <!-- Dashboard Section -->
+      <section id="section-dashboard" class="admin-section active">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value" id="stat-users">-</div>
+            <div class="stat-label">مستخدمين</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="stat-conversations">-</div>
+            <div class="stat-label">محادثات</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="stat-messages">-</div>
+            <div class="stat-label">رسائل</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="stat-admins">-</div>
+            <div class="stat-label">مشرفين</div>
+          </div>
+        </div>
+
+        <div class="admin-quick-actions">
+          <h3>إجراءات سريعة</h3>
+          <div class="quick-grid">
+            <button
+              class="btn btn-primary"
+              onclick="adminApp.goToSection('users')"
+            >
+              إدارة المستخدمين
+            </button>
+            <button
+              class="btn btn-outline"
+              onclick="adminApp.goToSection('conversations')"
+            >
+              عرض المحادثات
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Users Section -->
+      <section id="section-users" class="admin-section hidden">
+        <div class="section-header">
+          <h2>إدارة المستخدمين</h2>
+          <div class="user-filters">
+            <input
+              type="text"
+              id="user-search"
+              placeholder="البحث باسم المستخدم أو البريد..."
+            />
+            <select id="user-role-filter">
+              <option value="all">جميع الأدوار</option>
+              <option value="admin">مشرف</option>
+              <option value="user">مستخدم عادي</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>اسم المستخدم</th>
+                <th>البريد الإلكتروني</th>
+                <th>الدور</th>
+                <th>تاريخ الإنشاء</th>
+                <th>الإجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="users-table-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Conversations Section -->
+      <section id="section-conversations" class="admin-section hidden">
+        <div class="section-header">
+          <h2>جميع المحادثات</h2>
+          <div class="conv-filters">
+            <input
+              type="text"
+              id="conv-search"
+              placeholder="البحث باسم المستخدم أو عنوان المحادثة..."
+            />
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>المستخدم</th>
+                <th>عنوان المحادثة</th>
+                <th>تاريخ الإنشاء</th>
+                <th>آخر تحديث</th>
+                <th>الإجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="conversations-table-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Settings Section -->
+      <section id="section-settings" class="admin-section hidden">
+        <h2>إعدادات النظام</h2>
+        <div class="admin-settings-card">
+          <h3>إعدادات البريد للمشرف</h3>
+          <p>البريد الإلكتروني المحدد للمشرف الأول:</p>
+          <div class="setting-item">
+            <label>ADMIN_EMAIL</label>
+            <code id="admin-email-display">admin@chatbox.ai</code>
+          </div>
+          <div class="setting-note">
+            ملاحظة: أول مستخدم يسجل باستخدام هذا البريد يصبح مشرفاً تلقائياً.
+          </div>
+        </div>
+
+        <div class="admin-settings-card">
+          <h3>معلومات النظام</h3>
+          <div class="setting-item">
+            <label>إصدار التطبيق</label>
+            <code>2.0.0</code>
+          </div>
+          <div class="setting-item">
+            <label>قاعدة البيانات</label>
+            <code>SQLite (sql.js)</code>
+          </div>
+          <div class="setting-item">
+            <label>المنفذ</label>
+            <code>3000</code>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Modals -->
+    <div class="modal" id="role-modal" hidden>
+      <div class="modal-overlay" onclick="adminApp.closeRoleModal()"></div>
+      <div class="modal-content">
+        <h3>تغيير دور المستخدم</h3>
+        <p id="role-modal-username"></p>
+        <div class="modal-form">
+          <label>الدور الجديد:</label>
+          <select id="role-modal-select">
+            <option value="user">مستخدم عادي</option>
+            <option value="admin">مشرف</option>
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-outline" onclick="adminApp.closeRoleModal()">
+            إلغاء
+          </button>
+          <button class="btn btn-primary" onclick="adminApp.saveRole()">
+            حفظ
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="js/i18n.js"></script>
+    <script src="js/admin.js"></script>
+  </body>
+</html>

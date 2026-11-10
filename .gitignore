@@ -29,15 +29,15 @@ tmp/
 *.tmp
 .DS_Store
 
+# Node.js dependencies
+node_modules/
+
 # Archives — freeze (see OPERATIONS_REGISTRY.md)
 # Duplicate archives are archived under archive/ and never re-downloaded.
+archive/
 *.zip
 *.tar.gz
 *.tgz
 *.tar
 *.rar
 *.7z
-archive/*.zip
-archive/*.tar.gz
-archive/*.tgz
-archive/*.tar

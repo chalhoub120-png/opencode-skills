@@ -1,0 +1,1888 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Trello Clone - Full Features</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: #0079bf;
+        color: #172b4d;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+      button {
+        cursor: pointer;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+        font-family: inherit;
+      }
+      button:hover {
+        filter: brightness(0.95);
+      }
+      .topbar {
+        background: #026aa7;
+        color: #fff;
+        padding: 8px 16px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .logo {
+        font-size: 20px;
+        font-weight: 800;
+        letter-spacing: 0.5px;
+      }
+      .boards-switch {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+      .board-pill {
+        background: rgba(255, 255, 255, 0.2);
+        color: #fff;
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-size: 13px;
+      }
+      .board-pill.active {
+        background: #fff;
+        color: #026aa7;
+      }
+      .board-pill.fav {
+        border: 1px solid gold;
+      }
+      .top-actions {
+        margin-left: auto;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .search,
+      .filter-select {
+        padding: 7px 10px;
+        border-radius: 6px;
+        border: none;
+        outline: none;
+        font-size: 14px;
+      }
+      .avatar {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        color: #fff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 700;
+        flex-shrink: 0;
+        border: 2px solid rgba(255, 255, 255, 0.7);
+      }
+      .subbar {
+        background: rgba(255, 255, 255, 0.14);
+        padding: 8px 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #fff;
+        flex-wrap: wrap;
+      }
+      .board-title {
+        background: transparent;
+        border: none;
+        color: #fff;
+        font-size: 18px;
+        font-weight: 700;
+        outline: none;
+        padding: 4px 8px;
+        min-width: 200px;
+      }
+      .board-title:focus {
+        background: rgba(255, 255, 255, 0.18);
+        border-radius: 6px;
+      }
+      .layout {
+        display: flex;
+        flex: 1;
+        min-height: 0;
+      }
+      .sidebar {
+        width: 240px;
+        background: #065e96;
+        color: #fff;
+        padding: 16px 12px;
+        overflow-y: auto;
+      }
+      .sidebar h3 {
+        font-size: 12px;
+        opacity: 0.8;
+        text-transform: uppercase;
+        margin: 16px 6px 8px;
+      }
+      .board-item {
+        width: 100%;
+        text-align: left;
+        background: transparent;
+        color: #fff;
+        padding: 8px 10px;
+        margin-bottom: 4px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .board-item.active {
+        background: rgba(255, 255, 255, 0.18);
+      }
+      .star {
+        background: none;
+        color: #fff;
+      }
+      .star.on {
+        color: gold;
+      }
+      .board {
+        display: flex;
+        gap: 12px;
+        padding: 16px;
+        align-items: flex-start;
+        overflow-x: auto;
+        flex: 1;
+        min-height: 0;
+      }
+      .list {
+        background: #ebecf0;
+        border-radius: 10px;
+        width: 272px;
+        min-width: 272px;
+        padding: 8px;
+        display: flex;
+        flex-direction: column;
+        max-height: calc(100vh - 140px);
+      }
+      .list-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 4px 4px 8px;
+      }
+      .list-title {
+        font-weight: 700;
+        background: transparent;
+        border: none;
+        font-size: 14px;
+        width: 100%;
+        outline: none;
+        padding: 6px;
+        border-radius: 6px;
+      }
+      .list-title:focus {
+        background: #fff;
+      }
+      .icon-btn {
+        background: transparent;
+        color: #5e6c84;
+        padding: 4px 6px;
+      }
+      .icon-btn:hover {
+        background: rgba(9, 30, 66, 0.08);
+        color: #172b4d;
+      }
+      .cards {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        overflow-y: auto;
+        padding: 2px;
+        min-height: 10px;
+      }
+      .card {
+        background: #fff;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 1px 2px rgba(9, 30, 66, 0.25);
+        cursor: pointer;
+      }
+      .card:hover {
+        box-shadow: 0 2px 6px rgba(9, 30, 66, 0.3);
+      }
+      .card.dragging {
+        opacity: 0.5;
+      }
+      .card.drag-over {
+        outline: 2px dashed #0079bf;
+      }
+      .cover {
+        height: 36px;
+      }
+      .card-body {
+        padding: 8px 10px;
+      }
+      .card-labels {
+        display: flex;
+        gap: 4px;
+        flex-wrap: wrap;
+        margin-bottom: 6px;
+      }
+      .label {
+        height: 8px;
+        min-width: 32px;
+        border-radius: 4px;
+      }
+      .card-title {
+        font-size: 14px;
+        line-height: 1.4;
+        word-break: break-word;
+      }
+      .card-meta {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 8px;
+        align-items: center;
+        font-size: 12px;
+        color: #5e6c84;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: #f4f5f7;
+        padding: 2px 6px;
+        border-radius: 12px;
+      }
+      .badge.due {
+        background: #eb5a46;
+        color: #fff;
+      }
+      .badge.due.completed {
+        background: #61bd4f;
+        color: #fff;
+      }
+      .badge.due.overdue {
+        background: #e63312;
+        color: #fff;
+      }
+      .card-members {
+        margin-left: auto;
+        display: flex;
+      }
+      .card-members .avatar {
+        width: 24px;
+        height: 24px;
+        font-size: 10px;
+        border: none;
+        margin-left: -4px;
+      }
+      .add-card-btn {
+        margin-top: 8px;
+        text-align: left;
+        padding: 8px;
+        background: transparent;
+        color: #5e6c84;
+        width: 100%;
+      }
+      .add-card-btn:hover {
+        background: rgba(9, 30, 66, 0.08);
+      }
+      .card-editor {
+        width: 100%;
+        border: 2px solid #0079bf;
+        border-radius: 6px;
+        padding: 6px;
+        font-family: inherit;
+        resize: vertical;
+      }
+      .card-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 6px;
+        margin-top: 6px;
+        flex-wrap: wrap;
+      }
+      .btn-primary {
+        background: #0079bf;
+        color: #fff;
+        padding: 6px 10px;
+      }
+      .btn-primary:hover {
+        background: #026aa7;
+      }
+      .btn-ghost {
+        background: transparent;
+        color: #5e6c84;
+        padding: 6px 10px;
+      }
+      .btn-ghost:hover {
+        background: rgba(9, 30, 66, 0.08);
+      }
+      .btn-danger {
+        background: #e63312;
+        color: #fff;
+        padding: 6px 10px;
+      }
+      .add-list-btn {
+        background: rgba(255, 255, 255, 0.22);
+        color: #fff;
+        padding: 12px 16px;
+        width: 100%;
+        text-align: left;
+      }
+      .add-list-btn:hover {
+        background: rgba(255, 255, 255, 0.32);
+      }
+      .empty {
+        color: #5e6c84;
+        font-size: 13px;
+        text-align: center;
+        padding: 12px 0;
+      }
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(9, 30, 66, 0.6);
+        display: none;
+        align-items: flex-start;
+        justify-content: center;
+        overflow-y: auto;
+        z-index: 100;
+        padding: 40px 16px;
+      }
+      .modal-overlay.open {
+        display: flex;
+      }
+      .modal {
+        background: #f4f5f7;
+        width: 800px;
+        max-width: 100%;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+      }
+      .modal-cover {
+        height: 120px;
+        position: relative;
+      }
+      .modal-close {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: rgba(0, 0, 0, 0.2);
+        color: #fff;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+      }
+      .modal-content {
+        display: grid;
+        grid-template-columns: 1fr 240px;
+        gap: 0;
+      }
+      .modal-main {
+        padding: 16px 24px;
+        background: #f4f5f7;
+      }
+      .modal-side {
+        padding: 16px 12px;
+        background: #f4f5f7;
+      }
+      .modal-title {
+        font-size: 20px;
+        width: 100%;
+        border: none;
+        background: transparent;
+        font-weight: 700;
+        padding: 6px;
+        border-radius: 6px;
+        outline: none;
+      }
+      .modal-title:focus {
+        background: #fff;
+        box-shadow: inset 0 0 0 2px #0079bf;
+      }
+      .section {
+        margin-top: 20px;
+      }
+      .section h4 {
+        font-size: 16px;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .desc-box {
+        width: 100%;
+        min-height: 80px;
+        padding: 8px;
+        border-radius: 6px;
+        border: none;
+        background: #fff;
+        font-family: inherit;
+        resize: vertical;
+      }
+      .desc-box:focus {
+        outline: 2px solid #0079bf;
+      }
+      .checklist {
+        background: #fff;
+        border-radius: 8px;
+        padding: 8px;
+        margin-bottom: 8px;
+      }
+      .checklist-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: 700;
+      }
+      .progress {
+        height: 8px;
+        background: #dfe1e6;
+        border-radius: 4px;
+        overflow: hidden;
+        margin: 8px 0;
+      }
+      .progress-fill {
+        height: 100%;
+        background: #61bd4f;
+        transition: width 0.3s;
+      }
+      .check-item {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        padding: 6px 4px;
+        border-bottom: 1px solid #f4f5f7;
+      }
+      .check-item.done span {
+        text-decoration: line-through;
+        color: #5e6c84;
+      }
+      .comment {
+        background: #fff;
+        border-radius: 8px;
+        padding: 8px;
+        margin-bottom: 8px;
+      }
+      .comment-head {
+        font-weight: 700;
+        font-size: 13px;
+        margin-bottom: 4px;
+      }
+      .comment-time {
+        font-size: 12px;
+        color: #5e6c84;
+        font-weight: 400;
+        margin-left: 6px;
+      }
+      .comment-input {
+        width: 100%;
+        padding: 8px;
+        border-radius: 6px;
+        border: none;
+        box-shadow: 0 1px 2px rgba(9, 30, 66, 0.25);
+        font-family: inherit;
+      }
+      .side-btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        padding: 8px 10px;
+        background: #fff;
+        margin-bottom: 6px;
+        text-align: left;
+        box-shadow: 0 1px 2px rgba(9, 30, 66, 0.15);
+      }
+      .side-btn:hover {
+        background: #f4f5f7;
+      }
+      .side-btn.danger {
+        color: #e63312;
+      }
+      .picker {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 8px;
+      }
+      .swatch {
+        width: 36px;
+        height: 28px;
+        border-radius: 4px;
+        border: 2px solid transparent;
+      }
+      .swatch.sel {
+        border-color: #172b4d;
+      }
+      .attachments a {
+        color: #0079bf;
+        font-size: 13px;
+        display: block;
+        margin-bottom: 4px;
+        word-break: break-all;
+      }
+      .dropdown {
+        position: relative;
+        display: inline-block;
+      }
+      .menu {
+        position: absolute;
+        right: 0;
+        top: calc(100% + 6px);
+        background: #fff;
+        color: #172b4d;
+        border-radius: 8px;
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
+        min-width: 220px;
+        z-index: 60;
+        padding: 6px;
+        display: none;
+      }
+      .menu.open {
+        display: block;
+      }
+      .menu button {
+        display: block;
+        width: 100%;
+        text-align: left;
+        padding: 8px 10px;
+        background: none;
+        color: #172b4d;
+        font-weight: 500;
+      }
+      .menu button:hover {
+        background: #f4f5f7;
+      }
+      .menu .danger {
+        color: #e63312;
+      }
+      .toast {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #172b4d;
+        color: #fff;
+        padding: 10px 16px;
+        border-radius: 8px;
+        z-index: 200;
+        display: none;
+      }
+      .toast.show {
+        display: block;
+      }
+      @media (max-width: 900px) {
+        .modal-content {
+          grid-template-columns: 1fr;
+        }
+        .sidebar {
+          display: none;
+        }
+        .board {
+          padding: 12px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="logo">Trello</div>
+      <div class="boards-switch" id="boardsSwitch"></div>
+      <div class="top-actions">
+        <input
+          id="searchInput"
+          class="search"
+          placeholder="Search..."
+          aria-label="Search cards"
+        />
+        <select
+          id="labelFilter"
+          class="filter-select"
+          aria-label="Filter by label"
+        >
+          <option value="">All labels</option>
+        </select>
+        <button id="membersBtn" class="board-pill" title="Manage members">
+          Members
+        </button>
+        <div class="dropdown">
+          <button id="menuBtn" class="board-pill">Menu ▾</button>
+          <div id="boardMenu" class="menu">
+            <button data-action="add-board">+ Create new board</button>
+            <button data-action="duplicate">Duplicate board</button>
+            <button data-action="export">Export board JSON</button>
+            <button data-action="import">Import JSON</button>
+            <button data-action="reset" class="danger">
+              Delete board (reset demo)
+            </button>
+          </div>
+        </div>
+        <button id="createBoardBtn" class="board-pill">+ Create Board</button>
+      </div>
+    </header>
+
+    <div class="subbar">
+      <span>★</span>
+      <input
+        id="boardTitle"
+        class="board-title"
+        value="My Board"
+        aria-label="Board title"
+      />
+      <span id="cardCount" style="opacity: 0.9"></span>
+      <span style="flex: 1"></span>
+      <span id="topMembers" style="display: flex; gap: 6px"></span>
+      <label
+        style="display: flex; align-items: center; gap: 6px; font-size: 13px"
+        >Show archived <input type="checkbox" id="showArchived"
+      /></label>
+    </div>
+
+    <div class="layout">
+      <aside class="sidebar">
+        <h3>Your boards</h3>
+        <div id="sidebarBoards"></div>
+        <h3>Members</h3>
+        <div id="sidebarMembers"></div>
+        <button
+          id="addMemberBtn"
+          class="board-pill"
+          style="width: 100%; margin-top: 8px"
+        >
+          + Add member
+        </button>
+      </aside>
+      <main id="board" class="board" aria-label="Board"></main>
+    </div>
+
+    <div id="cardModal" class="modal-overlay" aria-hidden="true">
+      <div class="modal"><div id="modalBody"></div></div>
+    </div>
+    <div id="toast" class="toast"></div>
+    <input type="file" id="importFile" accept=".json" hidden />
+
+    <script>
+      const STORAGE_KEY = "trello-full-v2";
+
+      const LABEL_DEFS = [
+        { id: "green", name: "Done", color: "#61bd4f" },
+        { id: "yellow", name: "Warning", color: "#f2d600" },
+        { id: "orange", name: "Medium", color: "#ff9f1a" },
+        { id: "red", name: "Urgent", color: "#eb5a46" },
+        { id: "purple", name: "Design", color: "#c377e0" },
+        { id: "blue", name: "To Do", color: "#0079bf" },
+        { id: "sky", name: "Info", color: "#00c2e0" },
+        { id: "lime", name: "Low", color: "#51e898" },
+      ];
+
+      const COVER_COLORS = [
+        "",
+        "#0079bf",
+        "#61bd4f",
+        "#f2d600",
+        "#ff9f1a",
+        "#eb5a46",
+        "#c377e0",
+        "#00c2e0",
+        "#51e898",
+        "#172b4d",
+        "#ff78cb",
+      ];
+
+      let state = loadState();
+      let openCard = null; // {boardId, listId, cardId}
+
+      const boardEl = document.getElementById("board");
+      const boardTitleEl = document.getElementById("boardTitle");
+      const searchInputEl = document.getElementById("searchInput");
+      const labelFilterEl = document.getElementById("labelFilter");
+      const showArchivedEl = document.getElementById("showArchived");
+
+      function uid() {
+        return Math.random().toString(36).slice(2) + Date.now().toString(36);
+      }
+
+      function defaultState() {
+        const boardId = uid();
+        const members = [
+          { id: uid(), name: "You", initials: "YO", color: "#0079bf" },
+          { id: uid(), name: "Sara", initials: "SA", color: "#eb5a46" },
+          { id: uid(), name: "Ali", initials: "AL", color: "#61bd4f" },
+        ];
+        const listTodo = uid(),
+          listDoing = uid(),
+          listDone = uid();
+        const seedCards = [
+          {
+            id: uid(),
+            listId: listTodo,
+            boardId,
+            title: "Welcome! Open this card",
+            description:
+              "Double-click any card to edit title, description, labels, due date, checklist, comments, attachments.",
+            labels: ["blue", "green"],
+            dueDate: "",
+            completed: false,
+            checklists: [],
+            comments: [
+              {
+                id: uid(),
+                author: "You",
+                text: "This is a demo comment",
+                createdAt: Date.now(),
+              },
+            ],
+            attachments: [],
+            members: [members[0].id],
+            cover: "#0079bf",
+            isArchived: false,
+            isFavorite: false,
+          },
+          {
+            id: uid(),
+            listId: listTodo,
+            boardId,
+            title: "Try drag & drop",
+            description: "Drag this card to another list.",
+            labels: [],
+            dueDate: "",
+            completed: false,
+            checklists: [],
+            comments: [],
+            attachments: [],
+            members: [],
+            cover: "",
+            isArchived: false,
+            isFavorite: false,
+          },
+          {
+            id: uid(),
+            listId: listDoing,
+            boardId,
+            title: "Add checklist & due date",
+            description: "",
+            labels: ["yellow"],
+            dueDate: new Date(Date.now() + 86400000).toISOString().slice(0, 10),
+            completed: false,
+            checklists: [
+              {
+                id: uid(),
+                title: "Steps",
+                items: [
+                  { id: uid(), text: "Open card", done: true },
+                  { id: uid(), text: "Add checklist", done: false },
+                ],
+              },
+            ],
+            comments: [],
+            attachments: [],
+            members: [members[1].id],
+            cover: "",
+            isArchived: false,
+            isFavorite: false,
+          },
+        ];
+        return {
+          boards: [{ id: boardId, title: "My Board", isFavorite: true }],
+          currentBoardId: boardId,
+          lists: [
+            { id: listTodo, boardId, title: "To Do", isArchived: false },
+            { id: listDoing, boardId, title: "Doing", isArchived: false },
+            { id: listDone, boardId, title: "Done", isArchived: false },
+          ],
+          cards: seedCards,
+          members,
+          filter: { text: "", labelId: "" },
+        };
+      }
+
+      function loadState() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) return defaultState();
+          const parsed = normalizeState(JSON.parse(raw));
+          if (!parsed.boards.length) return defaultState();
+          return parsed;
+        } catch (_) {
+          return defaultState();
+        }
+      }
+
+      function saveState() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      }
+
+      function currentBoard() {
+        return (
+          state.boards.find((b) => b.id === state.currentBoardId) ||
+          state.boards[0]
+        );
+      }
+
+      function boardCards(boardId) {
+        return state.cards.filter((c) => c.boardId === boardId);
+      }
+
+      function boardLists(boardId) {
+        return state.lists.filter(
+          (l) =>
+            l.boardId === boardId &&
+            (!showArchivedEl.checked || l.isArchived ? true : !l.isArchived),
+        );
+      }
+
+      function isOverdue(card) {
+        if (!card.dueDate || card.completed) return false;
+        return new Date(card.dueDate) < new Date(new Date().toDateString());
+      }
+
+      function isDueSoon(card) {
+        if (!card.dueDate || card.completed) return false;
+        const diff = new Date(card.dueDate) - Date.now();
+        return diff >= 0 && diff <= 2 * 86400000;
+      }
+
+      function checklistProgress(card) {
+        const total = card.checklists.reduce((s, cl) => s + cl.items.length, 0);
+        const done = card.checklists.reduce(
+          (s, cl) => s + cl.items.filter((i) => i.done).length,
+          0,
+        );
+        return {
+          total,
+          done,
+          pct: total ? Math.round((done / total) * 100) : 0,
+        };
+      }
+
+      function render() {
+        renderBoardSwitch();
+        renderSidebar();
+        renderBoard();
+        renderBoardHeader();
+      }
+
+      function renderBoardSwitch() {
+        const el = document.getElementById("boardsSwitch");
+        el.innerHTML = "";
+        state.boards.slice(0, 4).forEach((b) => {
+          const btn = document.createElement("button");
+          btn.className =
+            "board-pill" +
+            (b.id === state.currentBoardId ? " active" : "") +
+            (b.isFavorite ? " fav" : "");
+          btn.textContent = (b.isFavorite ? "★ " : "") + b.title;
+          btn.onclick = () => {
+            state.currentBoardId = b.id;
+            saveState();
+            render();
+          };
+          el.appendChild(btn);
+        });
+      }
+
+      function renderSidebar() {
+        const boardsEl = document.getElementById("sidebarBoards");
+        boardsEl.innerHTML = "";
+        state.boards.forEach((b) => {
+          const row = document.createElement("div");
+          row.style.display = "flex";
+          row.style.gap = "4px";
+          row.style.marginBottom = "4px";
+          const btn = document.createElement("button");
+          btn.className =
+            "board-item" + (b.id === state.currentBoardId ? " active" : "");
+          btn.innerHTML = `<span>${escapeHtml(b.title)}</span>`;
+          btn.onclick = () => {
+            state.currentBoardId = b.id;
+            saveState();
+            render();
+          };
+          const star = document.createElement("button");
+          star.className = "star" + (b.isFavorite ? " on" : "");
+          star.textContent = "★";
+          star.title = "Toggle favorite";
+          star.style.padding = "6px";
+          star.onclick = () => {
+            b.isFavorite = !b.isFavorite;
+            saveState();
+            render();
+          };
+          row.append(btn, star);
+          boardsEl.appendChild(row);
+        });
+
+        const mEl = document.getElementById("sidebarMembers");
+        mEl.innerHTML = "";
+        state.members.forEach((m) => {
+          const row = document.createElement("div");
+          row.style.display = "flex";
+          row.style.alignItems = "center";
+          row.style.gap = "8px";
+          row.style.marginBottom = "6px";
+          const av = document.createElement("span");
+          av.className = "avatar";
+          av.style.background = m.color;
+          av.textContent = m.initials;
+          av.title = m.name;
+          const name = document.createElement("span");
+          name.textContent = m.name;
+          name.style.fontSize = "13px";
+          const del = document.createElement("button");
+          del.className = "icon-btn";
+          del.textContent = "✕";
+          del.style.color = "#fff";
+          del.title = "Remove member";
+          del.onclick = () => {
+            state.members = state.members.filter((x) => x.id !== m.id);
+            saveState();
+            render();
+          };
+          row.append(av, name, del);
+          mEl.appendChild(row);
+        });
+
+        const top = document.getElementById("topMembers");
+        top.innerHTML = "";
+        state.members.slice(0, 5).forEach((m) => {
+          const s = document.createElement("span");
+          s.className = "avatar";
+          s.style.background = m.color;
+          s.textContent = m.initials;
+          s.title = m.name;
+          top.appendChild(s);
+        });
+      }
+
+      function renderBoardHeader() {
+        const board = currentBoard();
+        if (board) boardTitleEl.value = board.title;
+        const count = boardCards(state.currentBoardId).filter(
+          (c) => !c.isArchived,
+        ).length;
+        document.getElementById("cardCount").textContent =
+          `${count} cards • ${boardLists(state.currentBoardId).length} lists`;
+      }
+
+      function renderBoard() {
+        boardEl.innerHTML = "";
+        const boardId = state.currentBoardId;
+        const lists = state.lists.filter(
+          (l) =>
+            l.boardId === boardId &&
+            (showArchivedEl.checked ? true : !l.isArchived),
+        );
+        lists.forEach((list) => boardEl.appendChild(renderList(list)));
+        boardEl.appendChild(renderAddList());
+      }
+
+      function renderList(list) {
+        const el = document.createElement("section");
+        el.className = "list";
+        const cards = boardCards(list.boardId).filter(
+          (c) => c.listId === list.id,
+        );
+        const visible = cards.filter(cardMatchesFilter);
+
+        el.innerHTML = `
+    <div class="list-header">
+      <input class="list-title" value="${escapeHtml(list.title)}" />
+      <div class="dropdown">
+        <button class="icon-btn" aria-label="List menu">•••</button>
+        <div class="menu">
+          <button data-act="copy">Copy list</button>
+          <button data-act="archive">${list.isArchived ? "Unarchive list" : "Archive list"}</button>
+          <button data-act="delete" class="danger">Delete list</button>
+        </div>
+      </div>
+    </div>
+    <div class="cards"></div>
+    <button class="add-card-btn">+ Add a card</button>`;
+
+        const titleInput = el.querySelector(".list-title");
+        titleInput.addEventListener("change", () => {
+          list.title = titleInput.value.trim() || "Untitled";
+          saveState();
+        });
+
+        const menuBtn = el.querySelector(".icon-btn");
+        const menu = el.querySelector(".menu");
+        menuBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          menu.classList.toggle("open");
+        });
+        document.addEventListener("click", () => menu.classList.remove("open"));
+        menu.querySelector("[data-act=copy]").addEventListener("click", () => {
+          const copy = {
+            id: uid(),
+            boardId: list.boardId,
+            title: list.title + " (copy)",
+            isArchived: false,
+          };
+          state.lists.splice(state.lists.indexOf(list) + 1, 0, copy);
+          cards.forEach((c) =>
+            state.cards.push({ ...c, id: uid(), listId: copy.id }),
+          );
+          saveState();
+          render();
+          toast("List copied");
+        });
+        menu
+          .querySelector("[data-act=archive]")
+          .addEventListener("click", () => {
+            list.isArchived = !list.isArchived;
+            saveState();
+            render();
+          });
+        menu
+          .querySelector("[data-act=delete]")
+          .addEventListener("click", () => {
+            state.lists = state.lists.filter((l) => l.id !== list.id);
+            state.cards = state.cards.filter((c) => c.listId !== list.id);
+            saveState();
+            render();
+            toast("List deleted");
+          });
+
+        const cardsEl = el.querySelector(".cards");
+        if (visible.length === 0) {
+          cardsEl.innerHTML = `<div class="empty">${state.filter.text || state.filter.labelId ? "No matching cards" : "No cards yet"}</div>`;
+        } else {
+          visible.forEach((card) => cardsEl.appendChild(renderCard(card)));
+        }
+        setupDropZone(cardsEl, list);
+        el.querySelector(".add-card-btn").addEventListener("click", () =>
+          startAddCard(list, cardsEl),
+        );
+        return el;
+      }
+
+      function cardMatchesFilter(card) {
+        if (card.isArchived && !showArchivedEl.checked) return false;
+        if (card.isArchived && showArchivedEl.checked) {
+          /* show */
+        }
+        const q = state.filter.text.toLowerCase();
+        if (
+          q &&
+          !(
+            card.title.toLowerCase().includes(q) ||
+            (card.description || "").toLowerCase().includes(q)
+          )
+        )
+          return false;
+        if (state.filter.labelId && !card.labels.includes(state.filter.labelId))
+          return false;
+        return true;
+      }
+
+      function renderCard(card) {
+        const el = document.createElement("article");
+        el.className = "card";
+        el.draggable = true;
+        el.dataset.cardId = card.id;
+        const coverColor = safeColor(card.cover);
+        const cover = coverColor
+          ? `<div class="cover" style="background:${coverColor}"></div>`
+          : "";
+        const labels = card.labels
+          .map((id) => {
+            const def = LABEL_DEFS.find((l) => l.id === id);
+            return def
+              ? `<span class="label" title="${def.name}" style="background:${def.color}"></span>`
+              : "";
+          })
+          .join("");
+
+        const prog = checklistProgress(card);
+        let badges = "";
+        if (card.dueDate) {
+          const cls = card.completed
+            ? "due completed"
+            : isOverdue(card)
+              ? "due overdue"
+              : "due";
+          badges += `<span class="badge ${cls}">📅 ${escapeHtml(card.dueDate)}</span>`;
+        }
+        if (prog.total)
+          badges += `<span class="badge">☑ ${prog.done}/${prog.total}</span>`;
+        if (card.comments.length)
+          badges += `<span class="badge">💬 ${card.comments.length}</span>`;
+        if (card.attachments.length)
+          badges += `<span class="badge">📎 ${card.attachments.length}</span>`;
+        if (card.isArchived) badges += `<span class="badge">Archived</span>`;
+        if (card.isFavorite) badges += `<span class="badge">★</span>`;
+
+        const members = card.members
+          .map((id) => state.members.find((m) => m.id === id))
+          .filter(Boolean)
+          .map(
+            (m) =>
+              `<span class="avatar" style="background:${safeColor(m.color)}" title="${escapeHtml(m.name)}">${escapeHtml(m.initials)}</span>`,
+          )
+          .join("");
+
+        el.innerHTML = `${cover}<div class="card-body">
+    ${labels ? `<div class="card-labels">${labels}</div>` : ""}
+    <div class="card-title">${escapeHtml(card.title)}</div>
+    ${badges || members ? `<div class="card-meta">${badges}${members ? `<span class="card-members">${members}</span>` : ""}</div>` : ""}
+  </div>`;
+
+        el.addEventListener("click", () => openCardModal(card.id));
+        el.addEventListener("dragstart", (e) => {
+          e.dataTransfer.setData("text/plain", card.id);
+          e.dataTransfer.effectAllowed = "move";
+          el.classList.add("dragging");
+        });
+        el.addEventListener("dragend", () => el.classList.remove("dragging"));
+        el.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          el.classList.add("drag-over");
+        });
+        el.addEventListener("dragleave", () =>
+          el.classList.remove("drag-over"),
+        );
+        el.addEventListener("drop", (e) => {
+          e.preventDefault();
+          el.classList.remove("drag-over");
+          const draggedId = e.dataTransfer.getData("text/plain");
+          moveCard(draggedId, card.listId, card.id);
+        });
+        return el;
+      }
+
+      function setupDropZone(cardsEl, list) {
+        cardsEl.addEventListener("dragover", (e) => e.preventDefault());
+        cardsEl.addEventListener("drop", (e) => {
+          e.preventDefault();
+          if (e.target.closest(".card")) return;
+          const draggedId = e.dataTransfer.getData("text/plain");
+          moveCard(draggedId, list.id);
+        });
+      }
+
+      function moveCard(cardId, toListId, beforeCardId = null) {
+        const card = state.cards.find((c) => c.id === cardId);
+        if (!card) return;
+        const oldListId = card.listId;
+        card.listId = toListId;
+        // Reorder in array for stable order: keep array order as visual order per list
+        // Simple approach: filter and re-insert before target if needed
+        const idx = state.cards.indexOf(card);
+        state.cards.splice(idx, 1);
+        if (beforeCardId) {
+          const beforeIdx = state.cards.findIndex((c) => c.id === beforeCardId);
+          state.cards.splice(beforeIdx, 0, card);
+        } else {
+          // push to end of that list's block
+          const listCards = state.cards.filter((c) => c.listId === toListId);
+          if (listCards.length) {
+            const lastIdx = state.cards.indexOf(
+              listCards[listCards.length - 1],
+            );
+            state.cards.splice(lastIdx + 1, 0, card);
+          } else {
+            state.cards.push(card);
+          }
+        }
+        saveState();
+        render();
+      }
+
+      function startAddCard(list, cardsEl) {
+        if (cardsEl.querySelector("textarea")) return;
+        const textarea = document.createElement("textarea");
+        textarea.className = "card-editor";
+        textarea.rows = 3;
+        textarea.placeholder = "Enter card title...";
+        cardsEl.appendChild(textarea);
+        textarea.focus();
+        const actions = document.createElement("div");
+        actions.className = "card-actions";
+        actions.innerHTML = `<button class="btn-primary">Add card</button><button class="btn-ghost">Cancel</button>`;
+        cardsEl.appendChild(actions);
+        const cleanup = () => {
+          textarea.remove();
+          actions.remove();
+        };
+        actions.children[1].onclick = cleanup;
+        actions.children[0].onclick = () => {
+          const title = textarea.value.trim();
+          if (!title) return;
+          state.cards.push({
+            id: uid(),
+            listId: list.id,
+            boardId: list.boardId,
+            title,
+            description: "",
+            labels: [],
+            dueDate: "",
+            completed: false,
+            checklists: [],
+            comments: [],
+            attachments: [],
+            members: [],
+            cover: "",
+            isArchived: false,
+            isFavorite: false,
+          });
+          saveState();
+          render();
+        };
+        textarea.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            actions.children[0].click();
+          }
+          if (e.key === "Escape") cleanup();
+        });
+      }
+
+      function renderAddList() {
+        const wrapper = document.createElement("div");
+        wrapper.style.minWidth = "260px";
+        wrapper.innerHTML = `<button class="add-list-btn">+ Add another list</button>`;
+        wrapper.querySelector("button").onclick = () => startAddList(wrapper);
+        return wrapper;
+      }
+
+      function startAddList(wrapper) {
+        wrapper.innerHTML = `<div class="list" style="background:#fff">
+    <input class="list-title" placeholder="Enter list title..." style="margin-bottom:8px" />
+    <div class="card-actions"><button class="btn-primary">Add list</button><button class="btn-ghost">Cancel</button></div></div>`;
+        const input = wrapper.querySelector("input");
+        input.focus();
+        wrapper.querySelector(".btn-ghost").onclick = render;
+        wrapper.querySelector(".btn-primary").onclick = () => {
+          state.lists.push({
+            id: uid(),
+            boardId: state.currentBoardId,
+            title: input.value.trim() || "Untitled",
+            isArchived: false,
+          });
+          saveState();
+          render();
+        };
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") wrapper.querySelector(".btn-primary").click();
+          if (e.key === "Escape") render();
+        });
+      }
+
+      /* Card Modal */
+      function getCard(cardId) {
+        return state.cards.find((c) => c.id === cardId);
+      }
+
+      function openCardModal(cardId) {
+        const card = getCard(cardId);
+        if (!card) return;
+        openCard = cardId;
+        const modal = document.getElementById("cardModal");
+        const body = document.getElementById("modalBody");
+        const list = state.lists.find((l) => l.id === card.listId);
+
+        const dueChecked = card.completed ? "checked" : "";
+        const dueDateVal = card.dueDate || "";
+        const labelsPicker = LABEL_DEFS.map((l) => {
+          const sel = card.labels.includes(l.id) ? " sel" : "";
+          return `<button class="swatch${sel}" data-label="${l.id}" title="${l.name}" style="background:${l.color}"></button>`;
+        }).join("");
+
+        const membersPicker = state.members
+          .map((m) => {
+            const sel = card.members.includes(m.id);
+            return `<button class="side-btn" data-member="${m.id}" style="${sel ? "outline:2px solid #0079bf" : ""}"><span class="avatar" style="background:${safeColor(m.color)}">${escapeHtml(m.initials)}</span> ${escapeHtml(m.name)}</button>`;
+          })
+          .join("");
+
+        const coverPicker = COVER_COLORS.map((c) => {
+          const sel = card.cover === c ? " sel" : "";
+          return `<button class="swatch${sel}" data-cover="${c}" style="background:${c || "#fff"}" title="${c || "None"}"></button>`;
+        }).join("");
+
+        const checklistsHtml = card.checklists
+          .map((cl) => {
+            const items = cl.items
+              .map(
+                (it) =>
+                  `<label class="check-item ${it.done ? "done" : ""}"><input type="checkbox" data-check="${cl.id}" data-item="${it.id}" ${it.done ? "checked" : ""} /><span style="flex:1">${escapeHtml(it.text)}</span><button class="icon-btn" data-del-item="${it.id}" data-checklist="${cl.id}">✕</button></label>`,
+              )
+              .join("");
+            const prog = cl.items.length
+              ? Math.round(
+                  (cl.items.filter((i) => i.done).length / cl.items.length) *
+                    100,
+                )
+              : 0;
+            return `<div class="checklist">
+      <div class="checklist-head"><span>${escapeHtml(cl.title)} — ${prog}%</span><button class="icon-btn" data-del-checklist="${cl.id}">Delete</button></div>
+      <div class="progress"><div class="progress-fill" style="width:${prog}%"></div></div>
+      ${items}
+      <div style="display:flex;gap:6px;margin-top:6px"><input data-new-item="${cl.id}" placeholder="Add an item..." style="flex:1;padding:6px;border-radius:6px;border:1px solid #dfe1e6" /><button class="btn-primary" data-add-item="${cl.id}">Add</button></div>
+    </div>`;
+          })
+          .join("");
+
+        const commentsHtml = card.comments
+          .map(
+            (cm) =>
+              `<div class="comment"><div class="comment-head">${escapeHtml(cm.author)}<span class="comment-time">${new Date(cm.createdAt).toLocaleString()}</span></div><div>${escapeHtml(cm.text)}</div></div>`,
+          )
+          .join("");
+
+        const attachmentsHtml =
+          card.attachments
+            .filter((a) => safeUrl(a.url))
+            .map(
+              (a) =>
+                `<a href="${escapeHtml(safeUrl(a.url))}" target="_blank" rel="noopener noreferrer">${escapeHtml(a.name)} ↗</a><button class="icon-btn" data-del-att="${a.id}">Remove</button>`,
+            )
+            .join("") ||
+          "<div style='color:#5e6c84;font-size:13px'>No attachments</div>";
+
+        body.innerHTML = `
+    <div class="modal-cover" style="background:${safeColor(card.cover) || "#0079bf"}">
+      <button class="modal-close" id="closeModal">✕</button>
+    </div>
+    <div class="modal-content">
+      <div class="modal-main">
+        <div style="color:#5e6c84;font-size:13px">in list <b>${escapeHtml(list?.title || "")}</b></div>
+        <input class="modal-title" id="modalTitle" value="${escapeHtml(card.title)}" />
+        <div class="section"><h4>📝 Description</h4><textarea id="modalDesc" class="desc-box" placeholder="Add a more detailed description...">${escapeHtml(card.description || "")}</textarea></div>
+        <div class="section"><h4>☑ Checklist</h4><div id="checklistsWrap">${checklistsHtml || "<div style='color:#5e6c84;font-size:13px'>No checklists yet</div>"} </div>
+          <div style="display:flex;gap:6px;margin-top:6px"><input id="newCheckTitle" placeholder="Checklist title..." style="flex:1;padding:6px;border-radius:6px;border:1px solid #dfe1e6"/><button id="addChecklistBtn" class="btn-primary">Add checklist</button></div>
+        </div>
+        <div class="section"><h4>💬 Comments</h4><div id="commentsWrap">${commentsHtml}</div><input id="newComment" class="comment-input" placeholder="Write a comment..." /><button id="addCommentBtn" class="btn-primary" style="margin-top:6px">Add comment</button></div>
+      </div>
+      <div class="modal-side">
+        <h4 style="font-size:13px;margin-bottom:6px">ADD TO CARD</h4>
+        <div class="section" style="margin-top:0"><h5 style="font-size:12px">Labels</h5><div class="picker" id="labelsPicker">${labelsPicker}</div></div>
+        <div class="section"><h5 style="font-size:12px">Members</h5><div id="membersPicker">${membersPicker}</div></div>
+        <div class="section"><h5 style="font-size:12px">Dates</h5><label style="display:flex;gap:6px;align-items:center;font-size:13px;margin-bottom:6px"><input type="checkbox" id="dueDone" ${dueChecked} /> Completed</label><input type="date" id="dueDate" value="${escapeHtml(dueDateVal)}" style="width:100%;padding:6px;border-radius:6px;border:1px solid #dfe1e6" /></div>
+        <div class="section"><h5 style="font-size:12px">Cover</h5><div class="picker" id="coverPicker">${coverPicker}</div></div>
+        <div class="section"><h5 style="font-size:12px">Attachments (link)</h5><div class="attachments" id="attList">${attachmentsHtml}</div><input id="attName" placeholder="Name" style="width:100%;padding:6px;margin-top:6px;border-radius:6px;border:1px solid #dfe1e6"/><input id="attUrl" placeholder="https://..." style="width:100%;padding:6px;margin-top:6px;border-radius:6px;border:1px solid #dfe1e6"/><button id="addAttBtn" class="btn-primary" style="margin-top:6px;width:100%">Add link</button></div>
+        <div class="section">
+          <button class="side-btn" id="favBtn">${card.isFavorite ? "★ Unfavorite" : "☆ Favorite"}</button>
+          <button class="side-btn" id="archiveBtn">${card.isArchived ? "Unarchive" : "Archive"}</button>
+          <button class="side-btn danger" id="deleteCardBtn">Delete</button>
+        </div>
+      </div>
+    </div>`;
+
+        modal.classList.add("open");
+        modal.setAttribute("aria-hidden", "false");
+
+        body.querySelector("#closeModal").onclick = closeModal;
+        modal.onclick = (e) => {
+          if (e.target === modal) closeModal();
+        };
+        body.querySelector("#modalTitle").addEventListener("change", (e) => {
+          card.title = e.target.value.trim() || card.title;
+          saveState();
+          render();
+        });
+        body.querySelector("#modalDesc").addEventListener("change", (e) => {
+          card.description = e.target.value;
+          saveState();
+          toast("Description saved");
+        });
+
+        body.querySelectorAll("#labelsPicker .swatch").forEach((btn) => {
+          btn.onclick = () => {
+            const id = btn.dataset.label;
+            card.labels = card.labels.includes(id)
+              ? card.labels.filter((x) => x !== id)
+              : [...card.labels, id];
+            saveState();
+            render();
+            openCardModal(card.id);
+          };
+        });
+        body.querySelectorAll("#coverPicker .swatch").forEach((btn) => {
+          btn.onclick = () => {
+            card.cover = btn.dataset.cover;
+            saveState();
+            render();
+            openCardModal(card.id);
+          };
+        });
+        body.querySelectorAll("#membersPicker [data-member]").forEach((btn) => {
+          btn.onclick = () => {
+            const id = btn.dataset.member;
+            card.members = card.members.includes(id)
+              ? card.members.filter((x) => x !== id)
+              : [...card.members, id];
+            saveState();
+            render();
+            openCardModal(card.id);
+          };
+        });
+        body.querySelector("#dueDate").addEventListener("change", (e) => {
+          card.dueDate = e.target.value;
+          saveState();
+          render();
+        });
+        body.querySelector("#dueDone").addEventListener("change", (e) => {
+          card.completed = e.target.checked;
+          saveState();
+          render();
+        });
+
+        body.querySelector("#addChecklistBtn").onclick = () => {
+          const title =
+            body.querySelector("#newCheckTitle").value.trim() || "Checklist";
+          card.checklists.push({ id: uid(), title, items: [] });
+          saveState();
+          render();
+          openCardModal(card.id);
+        };
+        body.querySelectorAll("[data-add-item]").forEach((btn) => {
+          btn.onclick = () => {
+            const cl = card.checklists.find(
+              (x) => x.id === btn.dataset.addItem,
+            );
+            const input = body.querySelector(`[data-new-item="${cl.id}"]`);
+            const text = input.value.trim();
+            if (!text) return;
+            cl.items.push({ id: uid(), text, done: false });
+            saveState();
+            render();
+            openCardModal(card.id);
+          };
+        });
+        body.querySelectorAll("[data-del-item]").forEach((btn) => {
+          btn.onclick = () => {
+            const cl = card.checklists.find(
+              (x) => x.id === btn.dataset.checklist,
+            );
+            cl.items = cl.items.filter((i) => i.id !== btn.dataset.delItem);
+            saveState();
+            render();
+            openCardModal(card.id);
+          };
+        });
+        body.querySelectorAll("[data-del-checklist]").forEach((btn) => {
+          btn.onclick = () => {
+            card.checklists = card.checklists.filter(
+              (x) => x.id !== btn.dataset.delChecklist,
+            );
+            saveState();
+            render();
+            openCardModal(card.id);
+          };
+        });
+        body
+          .querySelectorAll("input[type=checkbox][data-check]")
+          .forEach((box) => {
+            box.addEventListener("change", () => {
+              const cl = card.checklists.find(
+                (x) => x.id === box.dataset.check,
+              );
+              const item = cl.items.find((i) => i.id === box.dataset.item);
+              item.done = box.checked;
+              saveState();
+              render();
+              openCardModal(card.id);
+            });
+          });
+
+        body.querySelector("#addCommentBtn").onclick = () => {
+          const input = body.querySelector("#newComment");
+          const text = input.value.trim();
+          if (!text) return;
+          card.comments.push({
+            id: uid(),
+            author: "You",
+            text,
+            createdAt: Date.now(),
+          });
+          saveState();
+          render();
+          openCardModal(card.id);
+        };
+        body.querySelector("#addAttBtn").onclick = () => {
+          const name = body.querySelector("#attName").value.trim();
+          const url = body.querySelector("#attUrl").value.trim();
+          if (!url) return;
+          card.attachments.push({ id: uid(), name: name || url, url });
+          saveState();
+          render();
+          openCardModal(card.id);
+        };
+        body.querySelectorAll("[data-del-att]").forEach((btn) => {
+          btn.onclick = () => {
+            card.attachments = card.attachments.filter(
+              (a) => a.id !== btn.dataset.delAtt,
+            );
+            saveState();
+            render();
+            openCardModal(card.id);
+          };
+        });
+        body.querySelector("#favBtn").onclick = () => {
+          card.isFavorite = !card.isFavorite;
+          saveState();
+          render();
+          openCardModal(card.id);
+        };
+        body.querySelector("#archiveBtn").onclick = () => {
+          card.isArchived = !card.isArchived;
+          saveState();
+          render();
+          closeModal();
+        };
+        body.querySelector("#deleteCardBtn").onclick = () => {
+          state.cards = state.cards.filter((c) => c.id !== card.id);
+          saveState();
+          render();
+          closeModal();
+          toast("Card deleted");
+        };
+      }
+
+      function closeModal() {
+        document.getElementById("cardModal").classList.remove("open");
+        openCard = null;
+      }
+
+      function escapeHtml(s) {
+        return String(s ?? "").replace(
+          /[&<>"']/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[c],
+        );
+      }
+
+      /* Accept only plain hex colors, so imported data cannot inject CSS. */
+      function safeColor(v) {
+        const s = String(v ?? "").trim();
+        return /^#[0-9a-fA-F]{3,8}$/.test(s) ? s : "";
+      }
+
+      /* Accept only http(s) and mailto links, so imported data cannot inject javascript:. */
+      function safeUrl(v) {
+        const s = String(v ?? "").trim();
+        return /^(https?:\/\/|mailto:)/i.test(s) ? s : "";
+      }
+
+      function asArray(v) {
+        return Array.isArray(v) ? v : [];
+      }
+
+      function asText(v) {
+        if (typeof v === "string") return v;
+        if (typeof v === "number" || typeof v === "boolean") return String(v);
+        return "";
+      }
+
+      /* Rebuild state from untrusted JSON (localStorage or imported file). */
+      function normalizeState(raw) {
+        if (!raw || typeof raw !== "object")
+          throw new Error("Invalid board file");
+        if (!Array.isArray(raw.boards) || !raw.boards.length) {
+          throw new Error("Invalid board file");
+        }
+
+        const boards = raw.boards
+          .filter((b) => b && typeof b === "object" && b.id)
+          .map((b) => ({
+            id: asText(b.id),
+            title: asText(b.title) || "Untitled",
+            isFavorite: Boolean(b.isFavorite),
+          }));
+        if (!boards.length) throw new Error("Invalid board file");
+
+        const lists = asArray(raw.lists)
+          .filter((l) => l && typeof l === "object" && l.id)
+          .map((l) => ({
+            id: asText(l.id),
+            boardId: asText(l.boardId),
+            title: asText(l.title) || "Untitled",
+            isArchived: Boolean(l.isArchived),
+          }));
+
+        const cards = asArray(raw.cards)
+          .filter((c) => c && typeof c === "object" && c.id)
+          .map((c) => ({
+            id: asText(c.id),
+            listId: asText(c.listId),
+            boardId: asText(c.boardId),
+            title: asText(c.title),
+            description: asText(c.description),
+            labels: asArray(c.labels).map(asText).filter(Boolean),
+            dueDate: asText(c.dueDate),
+            completed: Boolean(c.completed),
+            checklists: asArray(c.checklists)
+              .filter((cl) => cl && typeof cl === "object")
+              .map((cl) => ({
+                id: asText(cl.id),
+                title: asText(cl.title) || "Checklist",
+                items: asArray(cl.items)
+                  .filter((it) => it && typeof it === "object")
+                  .map((it) => ({
+                    id: asText(it.id),
+                    text: asText(it.text),
+                    done: Boolean(it.done),
+                  })),
+              })),
+            comments: asArray(c.comments)
+              .filter((cm) => cm && typeof cm === "object")
+              .map((cm) => ({
+                id: asText(cm.id),
+                author: asText(cm.author) || "You",
+                text: asText(cm.text),
+                createdAt: Number(cm.createdAt) || Date.now(),
+              })),
+            attachments: asArray(c.attachments)
+              .filter((a) => a && typeof a === "object")
+              .map((a) => ({
+                id: asText(a.id),
+                name: asText(a.name),
+                url: safeUrl(a.url),
+              })),
+            members: asArray(c.members).map(asText).filter(Boolean),
+            cover: safeColor(c.cover),
+            isArchived: Boolean(c.isArchived),
+            isFavorite: Boolean(c.isFavorite),
+          }));
+
+        const members = asArray(raw.members)
+          .filter((m) => m && typeof m === "object" && m.id)
+          .map((m) => ({
+            id: asText(m.id),
+            name: asText(m.name) || "Member",
+            initials: asText(m.initials).slice(0, 3) || "M",
+            color: safeColor(m.color) || "#0079bf",
+          }));
+
+        const filter =
+          raw.filter && typeof raw.filter === "object" ? raw.filter : {};
+        return {
+          boards,
+          currentBoardId: asText(raw.currentBoardId),
+          lists,
+          cards,
+          members,
+          filter: {
+            text: asText(filter.text),
+            labelId: asText(filter.labelId),
+          },
+        };
+      }
+
+      function toast(msg) {
+        const t = document.getElementById("toast");
+        t.textContent = msg;
+        t.classList.add("show");
+        setTimeout(() => t.classList.remove("show"), 2200);
+      }
+
+      /* Board management */
+      function createBoard() {
+        const title = prompt("Board title:", "New Board");
+        if (title === null) return;
+        const id = uid();
+        state.boards.push({
+          id,
+          title: title.trim() || "New Board",
+          isFavorite: false,
+        });
+        state.currentBoardId = id;
+        state.lists.push(
+          { id: uid(), boardId: id, title: "To Do", isArchived: false },
+          { id: uid(), boardId: id, title: "Doing", isArchived: false },
+          { id: uid(), boardId: id, title: "Done", isArchived: false },
+        );
+        saveState();
+        render();
+        toast("Board created");
+      }
+
+      function addMember() {
+        const name = prompt(
+          "Member name:",
+          `Member ${state.members.length + 1}`,
+        );
+        if (!name) return;
+        const initials =
+          name
+            .trim()
+            .split(/\s+/)
+            .map((w) => w[0])
+            .join("")
+            .slice(0, 2)
+            .toUpperCase() || "M";
+        const color = [
+          "#0079bf",
+          "#eb5a46",
+          "#61bd4f",
+          "#ff9f1a",
+          "#c377e0",
+          "#00c2e0",
+        ][state.members.length % 6];
+        state.members.push({ id: uid(), name: name.trim(), initials, color });
+        saveState();
+        render();
+        toast("Member added");
+      }
+
+      function exportBoard() {
+        const blob = new Blob([JSON.stringify(state, null, 2)], {
+          type: "application/json",
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "trello-export.json";
+        a.click();
+        URL.revokeObjectURL(url);
+        toast("Exported");
+      }
+
+      function importBoard(file) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            const parsed = JSON.parse(reader.result);
+            state = normalizeState(parsed);
+            saveState();
+            render();
+            toast("Imported");
+          } catch (_) {
+            toast("Import failed");
+          }
+        };
+        reader.readAsText(file);
+      }
+
+      /* Global listeners */
+      boardTitleEl.addEventListener("change", () => {
+        const board = currentBoard();
+        if (!board) return;
+        board.title = boardTitleEl.value.trim() || "Untitled";
+        saveState();
+        render();
+      });
+      searchInputEl.addEventListener("input", () => {
+        state.filter.text = searchInputEl.value;
+        saveState();
+        render();
+      });
+      labelFilterEl.addEventListener("change", () => {
+        state.filter.labelId = labelFilterEl.value;
+        saveState();
+        render();
+      });
+      showArchivedEl.addEventListener("change", render);
+      document
+        .getElementById("createBoardBtn")
+        .addEventListener("click", createBoard);
+      document
+        .getElementById("membersBtn")
+        .addEventListener("click", addMember);
+      document
+        .getElementById("addMemberBtn")
+        .addEventListener("click", addMember);
+
+      const menuBtn = document.getElementById("menuBtn");
+      const boardMenu = document.getElementById("boardMenu");
+      menuBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        boardMenu.classList.toggle("open");
+      });
+      document.addEventListener("click", () =>
+        boardMenu.classList.remove("open"),
+      );
+      boardMenu
+        .querySelector("[data-action=add-board]")
+        .addEventListener("click", createBoard);
+      boardMenu
+        .querySelector("[data-action=export]")
+        .addEventListener("click", exportBoard);
+      boardMenu
+        .querySelector("[data-action=import]")
+        .addEventListener("click", () =>
+          document.getElementById("importFile").click(),
+        );
+      boardMenu
+        .querySelector("[data-action=duplicate]")
+        .addEventListener("click", () => {
+          const board = currentBoard();
+          if (!board) return;
+          const newId = uid();
+          state.boards.push({
+            id: newId,
+            title: board.title + " (copy)",
+            isFavorite: false,
+          });
+          state.lists
+            .filter((l) => l.boardId === board.id)
+            .forEach((l) => {
+              const newListId = uid();
+              state.lists.push({ ...l, id: newListId, boardId: newId });
+              state.cards
+                .filter((c) => c.listId === l.id)
+                .forEach((c) =>
+                  state.cards.push({
+                    ...c,
+                    id: uid(),
+                    boardId: newId,
+                    listId: newListId,
+                  }),
+                );
+            });
+          saveState();
+          render();
+          toast("Board duplicated");
+        });
+      boardMenu
+        .querySelector("[data-action=reset]")
+        .addEventListener("click", () => {
+          if (!confirm("Reset demo data? This clears local boards.")) return;
+          state = defaultState();
+          saveState();
+          render();
+          toast("Reset done");
+        });
+      document.getElementById("importFile").addEventListener("change", (e) => {
+        if (e.target.files[0]) importBoard(e.target.files[0]);
+        e.target.value = "";
+      });
+
+      // label filter options
+      LABEL_DEFS.forEach((l) => {
+        const o = document.createElement("option");
+        o.value = l.id;
+        o.textContent = l.name;
+        labelFilterEl.appendChild(o);
+      });
+      if (state.filter.labelId) labelFilterEl.value = state.filter.labelId;
+      searchInputEl.value = state.filter.text || "";
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeModal();
+      });
+
+      render();
+    </script>
+  </body>
+</html>
