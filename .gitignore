@@ -41,3 +41,33 @@ archive/
 *.tar
 *.rar
 *.7z
+
+# Backup files — never commit
+*.bak
+*.backup
+*.orig
+*.rej
+
+# Log files — never commit
+*.log
+
+# Database dumps — never commit
+*.dump
+*.db
+*.sqlite
+*.sqlite3
+
+# Audio outputs — never commit
+*.wav
+*.mp3
+*.ogg
+
+# Embedded / external skill repos — managed separately
+.vendor-skills/
+_vendor-skills/
+_staging/
+artemis-review/
+claude-skills-src/
+my-scraper-clone/
+open-code-skills-manager/
+security/
