@@ -1,0 +1,106 @@
+{
+  "name": "Telegram Integration",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": ["message"]
+      },
+      "id": "trigger",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "credentials": { "telegram": "telegram-cred" }
+    },
+    {
+      "parameters": {
+        "rule": "time",
+        "time": "30000",
+        "operation": "deduplicate"
+      },
+      "id": "dedup",
+      "name": "Duplicate Protection",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.message.text }}",
+        "userId": "={{ $json.message.from.id }}",
+        "language": "auto",
+        "conversationId": "={{ $json.message.chat.id }}"
+      },
+      "id": "processChat",
+      "name": "Process via Orchestrator",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [680, 300],
+      "authentication": {
+        "genericAuthType": "header",
+        "header": {
+          "name": "Authorization",
+          "value": "=Bearer {{$credentials.opencodeApiKey}}"
+        }
+      },
+      "retryOnFail": true,
+      "maxRetries": 3,
+      "retryWait": 5000
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "table": "audit_logs",
+        "data": {
+          "user_id": "={{ $json.message.from.id }}",
+          "action": "telegram:message_received",
+          "resource": "message",
+          "metadata": {
+            "chat_id": "={{ $json.message.chat.id }}",
+            "language": "auto"
+          }
+        }
+      },
+      "id": "auditLog",
+      "name": "Audit Log Message",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [900, 300],
+      "credentials": { "postgres": "postgres-cred" }
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.answer }}",
+        "chatId": "={{ $json.message.chat.id }}",
+        "replyToMessageId": "={{ $json.message.message_id }}"
+      },
+      "id": "sendReply",
+      "name": "Send Reply",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [1120, 300],
+      "credentials": { "telegram": "telegram-cred" },
+      "retryOnFail": true,
+      "maxRetries": 3,
+      "retryWait": 5000
+    }
+  ],
+  "connections": {
+    "Duplicate Protection": {
+      "main": [
+        [{ "node": "Process via Orchestrator", "type": "main", "index": 0 }]
+      ]
+    },
+    "Process via Orchestrator": {
+      "main": [[{ "node": "Audit Log Message", "type": "main", "index": 0 }]]
+    },
+    "Audit Log Message": {
+      "main": [[{ "node": "Send Reply", "type": "main", "index": 0 }]]
+    },
+    "Telegram Trigger": {
+      "main": [[{ "node": "Duplicate Protection", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {},
+  "id": "telegram-workflow"
+}

@@ -1,0 +1,277 @@
+app:
+  description: Hassib financial assistant - AI finance helper with Knowledge Retrieval and Question Classification
+  icon: 🤖
+  icon_background: '#FFEAD5'
+  mode: advanced-chat
+  name: Hassib-finance
+  use_icon_as_answer_icon: false
+kind: app
+version: 0.4.0
+workflow:
+  features:
+    file_upload:
+      image:
+        enabled: false
+        number_limits: 3
+        transfer_methods:
+        - local_file
+        - remote_url
+      video:
+        enabled: false
+        number_limits: 3
+        transfer_methods:
+        - local_file
+        - remote_url
+      audio:
+        enabled: false
+        number_limits: 3
+        transfer_methods:
+        - local_file
+        - remote_url
+    opening_statement: Hello, I'm Hassib, your financial assistant. Ask me about budgets, invoices, saving plans, salaries, or financial reports.
+    retriever_resource:
+      enabled: true
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions:
+    - Explain personal budgeting simply
+    - My salary is 8000, I save 15%, and my car installment is 1500. What remains?
+    - How much should I save monthly to reach 12000 in 6 months?
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    edges:
+    - data:
+        sourceType: start
+        targetType: question-classifier
+      id: start-source-question-classifier-target
+      source: start
+      sourceHandle: source
+      target: question-classifier
+      targetHandle: target
+      type: custom
+      zIndex: 1002
+    - data:
+        sourceType: question-classifier
+        targetType: knowledge-retrieval
+      id: question-classifier-financial-knowledge-retrieval
+      source: question-classifier
+      sourceHandle: financial_query
+      target: knowledge-retrieval
+      targetHandle: target
+      type: custom
+      zIndex: 1002
+    - data:
+        sourceType: question-classifier
+        targetType: llm
+      id: question-classifier-other-llm
+      source: question-classifier
+      sourceHandle: other
+      target: llm
+      targetHandle: target
+      type: custom
+      zIndex: 1002
+    - data:
+        sourceType: question-classifier
+        targetType: answer
+      id: question-classifier-greeting-answer-greeting
+      source: question-classifier
+      sourceHandle: greeting
+      target: answer-greeting
+      targetHandle: target
+      type: custom
+      zIndex: 1002
+    - data:
+        sourceType: knowledge-retrieval
+        targetType: llm
+      id: knowledge-retrieval-source-llm-target
+      source: knowledge-retrieval
+      sourceHandle: source
+      target: llm
+      targetHandle: target
+      type: custom
+      zIndex: 1002
+    - data:
+        sourceType: llm
+        targetType: answer
+      id: llm-source-answer-target
+      source: llm
+      sourceHandle: source
+      target: answer
+      targetHandle: target
+      type: custom
+      zIndex: 1002
+    nodes:
+    - data:
+        desc: ''
+        selected: false
+        title: User Input
+        type: start
+        variables: []
+      height: 94
+      id: start
+      position:
+        x: 81
+        y: 300
+      positionAbsolute:
+        x: 81
+        y: 300
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        desc: ''
+        selected: false
+        title: Question Classifier
+        type: question-classifier
+        categories:
+        - id: financial_query
+          name: Financial Query
+          description: Questions about money, budget, salary, invoices, taxes, ZATCA, VAT, accounting, saving, investing, financial reports, expenses, and payments.
+        - id: greeting
+          name: Greeting
+          description: Hello, hi, thank you, who are you, help me, bye
+        - id: other
+          name: Other
+          description: Anything that is not financial and not a greeting.
+        model:
+          completion_params:
+            temperature: 0.3
+          mode: chat
+          name: gpt-5
+          provider: langgenius/openai/openai
+        query_variable_selector:
+        - start
+        - query
+        vision:
+          enabled: false
+      height: 98
+      id: question-classifier
+      position:
+        x: 400
+        y: 300
+      positionAbsolute:
+        x: 400
+        y: 300
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        desc: ''
+        selected: false
+        title: Knowledge Retrieval
+        type: knowledge-retrieval
+        dataset_ids: []
+        query_variable_selector:
+        - sys
+        - query
+        retrieval_mode: single
+        top_k: 5
+        similarity_threshold: 0.5
+        reranking_enable: true
+      height: 98
+      id: knowledge-retrieval
+      position:
+        x: 730
+        y: 200
+      positionAbsolute:
+        x: 730
+        y: 200
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        desc: ''
+        selected: false
+        title: LLM
+        type: llm
+        model:
+          completion_params:
+            temperature: 0.3
+          mode: chat
+          name: gpt-5
+          provider: langgenius/openai/openai
+        vision:
+          enabled: false
+        variable_selector:
+        - knowledge-retrieval
+        - result
+        context:
+          enabled: true
+          variable_selector:
+          - knowledge-retrieval
+          - result
+        memory:
+          enabled: true
+          window_size: 5
+        structured_output: null
+        prompt_template:
+        - role: system
+          text: "You are Hassib, a professional AI financial assistant.\n\nYour goal is to help the user understand personal and business finance clearly and simply.\n\nRules:\n1. Always answer in the same language the user uses.\n2. Give educational general information only. Do not give personal advice for a specific stock, loan, or investment decision.\n3. Do not invent live prices, exchange rates, news, or laws. If you do not have live data, say so clearly.\n4. If you do not know something, say \"I don't know\" and ask for clarification. Never guess.\n5. For any calculation, show: Inputs, Step-by-step calculation, and Final Result.\n6. Use the context from documents if it is provided and relevant. If context is empty, answer from general knowledge.\n7. Be concise by default. Use short headings, bullet points, and tables when needed.\n8. For sensitive financial topics, add at the end: \"This is general information only and not personalized financial advice. Please consult a licensed financial professional.\"\n\nTone: Friendly, professional, clear, and simple."
+          id: system-1
+        - role: user
+          text: "[USER QUESTION]\n{{sys.query}}\n\n[CONTEXT FROM DOCUMENTS]\n{{knowledge-retrieval.result}}"
+          id: user-1
+        retry_config:
+          enabled: true
+          max_retries: 2
+        error_strategy: default-value
+        default_value:
+        - variable: text
+          value: Sorry, a temporary error occurred. Please send your request again in simpler form.
+          type: string
+      height: 98
+      id: llm
+      position:
+        x: 1030
+        y: 200
+      positionAbsolute:
+        x: 1030
+        y: 200
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        desc: ''
+        selected: false
+        title: Answer
+        type: answer
+        answer: "{{llm.text}}"
+      height: 98
+      id: answer
+      position:
+        x: 1350
+        y: 200
+      positionAbsolute:
+        x: 1350
+        y: 200
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        desc: ''
+        selected: false
+        title: Answer (Greeting)
+        type: answer
+        answer: Hello, I am Hassib, your financial assistant. Ask me about budgets, invoices, saving plans, salaries, or financial reports.
+      height: 98
+      id: answer-greeting
+      position:
+        x: 730
+        y: 400
+      positionAbsolute:
+        x: 730
+        y: 400
+      targetPosition: left
+      type: custom
+      width: 244
+   viewport:
+    x: 0
+    y: 0
+    zoom: 1

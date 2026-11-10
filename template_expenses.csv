@@ -1,0 +1,8 @@
+date,description,category,amount,currency,notes
+2026-09-01,Monthly Salary,income,8000,SAR,Main salary
+2026-09-03,Rent,housing,1500,SAR,Apartment rent
+2026-09-10,Groceries,food,350,SAR,Weekly supermarket
+2026-09-15,Electricity Bill,utilities,220,SAR,SEC bill Sep
+2026-09-20,Internet,utilities,150,SAR,STC fiber
+2026-09-25,Car installment,transport,1500,SAR,Bank auto loan
+2026-09-28,Saving,investment,1200,SAR,15% saving target

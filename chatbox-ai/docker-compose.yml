@@ -1,0 +1,27 @@
+version: "3.8"
+
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - JWT_SECRET=change-me-secret
+      - AI_BASE_URL=http://ollama:11434
+      - AI_DEFAULT_MODEL=llama3
+    depends_on:
+      - ollama
+    volumes:
+      - ./data:/app/data
+      - ./uploads:/app/uploads
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+
+volumes:
+  ollama-data:

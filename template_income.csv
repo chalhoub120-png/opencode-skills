@@ -1,0 +1,5 @@
+date,source,type,amount,currency
+2026-09-01,Salary,regular,8000,SAR
+2026-09-10,Freelance Project,irregular,1500,SAR
+2026-09-18,Dividend,investment,450,SAR
+2026-09-25,Refund,other,200,SAR

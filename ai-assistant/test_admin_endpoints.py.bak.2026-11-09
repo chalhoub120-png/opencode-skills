@@ -1,0 +1,71 @@
+import urllib.request, json
+
+BASE_URL = "http://127.0.0.1:8001"
+API_KEY = "admin-key-001"
+
+def test_endpoint(method, path, data=None):
+    url = BASE_URL + path
+    headers_dict = {"Content-Type": "application/json", "X-API-Key": API_KEY}
+    
+    try:
+        if method == "GET":
+            req = urllib.request.Request(url, headers=headers_dict, method="GET")
+        elif method == "POST":
+            body = json.dumps(data).encode('utf-8') if data else None
+            req = urllib.request.Request(url, data=body, headers=headers_dict, method="POST")
+        
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            body = resp.read().decode('utf-8')
+            try:
+                result = json.loads(body)
+            except:
+                result = body
+            return {"status": resp.status, "success": True, "data": result}
+    except urllib.error.HTTPError as e:
+        body = e.read().decode('utf-8')
+        try:
+            result = json.loads(body)
+        except:
+            result = body
+        return {"status": e.code, "success": False, "data": result}
+    except Exception as e:
+        return {"status": None, "success": False, "data": str(e)}
+
+results = []
+
+results.append(("GET /agents (admin)", test_endpoint("GET", "/agents")))
+results.append(("GET /settings (admin)", test_endpoint("GET", "/settings")))
+results.append(("GET /memory (admin)", test_endpoint("GET", "/memory?conversation_id=test123")))
+
+lines = []
+lines.append("=" * 50)
+lines.append("ADMIN TEST RESULTS:")
+lines.append("=" * 50)
+
+all_passed = True
+for name, result in results:
+    status = result.get("status")
+    success = result.get("success")
+    data = result.get("data")
+    
+    if success and status == 200:
+        status_str = "PASS"
+    else:
+        status_str = f"FAIL({status})"
+    
+    lines.append(f"{name}: {status_str}")
+    
+    if not (success and status == 200):
+        all_passed = False
+        lines.append(f"  Details: {str(data)[:200]}")
+
+lines.append("=" * 50)
+if all_passed:
+    lines.append("ALL ADMIN TESTS PASSED!")
+else:
+    lines.append("SOME ADMIN TESTS FAILED")
+
+with open("C:/Users/user/Documents/Default Project/ai-assistant/test_admin_results.txt", "w", encoding="utf-8") as f:
+    f.write("\n".join(lines))
+
+print("\n".join(lines))

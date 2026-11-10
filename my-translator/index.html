@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>مترجم داخلي — استخدام شخصي</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="header">
+        <h1>مترجم داخلي</h1>
+        <p class="subtitle">استخدام شخصي — جميع البيانات تبقى على جهازك</p>
+      </header>
+
+      <main class="main">
+        <!-- النص الأصلي -->
+        <section class="panel source-panel">
+          <div class="panel-header">
+            <label for="source-lang">من اللغة</label>
+            <select id="source-lang" class="lang-select"></select>
+            <button id="detect-lang" class="btn-small">اكتشاف تلقائي</button>
+          </div>
+          <textarea
+            id="source-text"
+            class="textarea"
+            placeholder="اكتب أو الصق النص هنا للترجمة…"
+            spellcheck="false"
+          ></textarea>
+          <div class="panel-footer">
+            <span id="source-count" class="count">0 حرف</span>
+          </div>
+        </section>
+
+        <!-- أزرار التحكم في الوسط -->
+        <div class="controls">
+          <button id="translate-btn" class="btn-translate">ترجمة</button>
+          <button id="swap-lang" class="btn-swap" title="تبديل اللغات">
+            ⇄
+          </button>
+        </div>
+
+        <!-- النص المترجم -->
+        <section class="panel target-panel">
+          <div class="panel-header">
+            <label for="target-lang">إلى اللغة</label>
+            <select id="target-lang" class="lang-select"></select>
+          </div>
+          <textarea
+            id="target-text"
+            class="textarea"
+            readonly
+            placeholder="ستظهر الترجمة هنا…"
+            spellcheck="false"
+          ></textarea>
+          <div class="panel-footer actions">
+            <button id="copy-btn" class="btn-small">نسخ</button>
+            <span id="target-count" class="count">0 حرف</span>
+          </div>
+        </section>
+      </main>
+
+      <div class="status" id="status" aria-live="polite"></div>
+    </div>
+
+    <script src="app.js" defer></script>
+  </body>
+</html>

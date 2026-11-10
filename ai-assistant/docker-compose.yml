@@ -1,0 +1,163 @@
+services:
+  ollama:
+    image: busybox@sha256:a46257e06c82ad85242d0d38077d0a52d9896389ca60a1a59d3463db586e5fa4
+    container_name: ai-ollama
+    command: sleep infinity
+    ports:
+      - "127.0.0.1:11435:11434"
+    volumes:
+      - ollama:/root/.ollama
+    restart: always
+    networks:
+      - ai-network
+
+  qdrant:
+    image: qdrant/qdrant@sha256:9bfc89f9914fc14876a88c05270685921a55b8877b254a98bcc1cc2f0a424cd2
+    container_name: ai-qdrant
+    ports:
+      - "127.0.0.1:6333:6333"
+    volumes:
+      - qdrant:/storage/qdrant
+    restart: always
+    networks:
+      - ai-network
+
+  postgres:
+    image: postgres:16
+    container_name: ai-postgres
+    ports:
+      - "127.0.0.1:5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required}
+    volumes:
+      - postgres:/var/lib/postgresql/data
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    restart: always
+    networks:
+      - ai-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: ai-redis
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis:/data
+    command: ["redis-server", "--appendonly", "yes"]
+    restart: always
+    networks:
+      - ai-network
+
+  n8n:
+    image: n8nio/n8n@sha256:8602f5dfacbe2c931eeafd010de0e68182310e9f309921e780ab69182e92b3ae
+    container_name: ai-n8n
+    ports:
+      - "127.0.0.1:5679:5678"
+    environment:
+      N8N_HOST: n8n
+      N8N_PORT: 5678
+      N8N_PROTOCOL: http
+      N8N_BASIC_AUTH_ACTIVE: "true"
+      N8N_BASIC_AUTH_USER: ${N8N_BASIC_AUTH_USER:-admin}
+      N8N_BASIC_AUTH_PASSWORD: ${N8N_BASIC_AUTH_PASSWORD}
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:?N8N_ENCRYPTION_KEY is required}
+      DOC_INGEST_TOKEN: ${DOC_INGEST_TOKEN:-}
+      DOC_INGEST_ALLOWED_HOSTS: ${DOC_INGEST_ALLOWED_HOSTS:-}
+      DOC_INGEST_CHAT_ID: ${DOC_INGEST_CHAT_ID:-}
+    volumes:
+      - n8n:/home/node/.n8n
+    restart: always
+    networks:
+      - ai-network
+    depends_on:
+      - postgres
+      - redis
+
+  opencode-orchestrator:
+    build:
+      context: .
+      dockerfile: Dockerfile.orchestrator
+    container_name: ai-orchestrator
+    ports:
+      - "127.0.0.1:8100:8000"
+    environment:
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
+      DIFY_BASE_URL: http://dify:5001
+      N8N_BASE_URL: http://n8n:5678
+      # DATABASE_URL must be set in .env (never hardcoded).
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+      REDIS_URL: redis://redis:6379/0
+      QDRANT_URL: http://qdrant:6333
+      WHISPER_MODEL: small
+      API_SECRET_KEY: ${API_SECRET_KEY:?API_SECRET_KEY is required}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:?JWT_SECRET_KEY is required}
+      DEFAULT_LLM_MODEL: gemma4:e2b
+      REASONING_LLM_MODEL: gemma4:e2b
+      LANGUAGE_DETECTION_MODEL: whisper-large-v3
+    volumes:
+      - ./orchestrator:/app/orchestrator
+      - ./agents:/app/agents
+      - ./llm:/app/llm
+      - ./knowledge:/app/knowledge
+      - ./db:/app/db
+      - ./tools:/app/tools
+      - ./security:/app/security
+      - ./voice:/app/voice
+      - ./models:/app/models
+      - ./scripts:/app/scripts
+      - ./dashboard:/app/dashboard
+    restart: always
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 2g
+    cpus: 2.0
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - ai-network
+    depends_on:
+      - n8n
+      - postgres
+      - redis
+      - qdrant
+
+  dify:
+    image: langgenius/dify-api:1.19.0
+    container_name: ai-dify
+    ports:
+      - "127.0.0.1:5001:5001"
+    environment:
+      DATABASE_URL: ${DIFY_DATABASE_URL:?DIFY_DATABASE_URL is required}
+      REDIS_URL: redis://redis:6379/0
+      QDRANT_HOST: qdrant
+      QDRANT_PORT: 6333
+      OLLAMA_BASE_URL: http://ollama:11434
+      SECRET_KEY: ${DIFY_SECRET_KEY}
+    volumes:
+      - dify_storage:/app/storage
+    restart: always
+    networks:
+      - ai-network
+    profiles:
+      - dify
+    depends_on:
+      - postgres
+      - redis
+      - qdrant
+      - ollama
+
+volumes:
+  ollama:
+  qdrant:
+  postgres:
+  redis:
+  n8n:
+  dify_storage:
+
+networks:
+  ai-network:
+    driver: bridge

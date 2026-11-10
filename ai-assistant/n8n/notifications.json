@@ -1,0 +1,104 @@
+{
+  "name": "Notifications",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "notify-webhook",
+        "responseMode": "onReceived"
+      },
+      "id": "webhook",
+      "name": "Notification Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "rule": "time",
+        "time": "60000",
+        "operation": "deduplicate"
+      },
+      "id": "dedup",
+      "name": "Duplicate Protection",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "table": "notifications",
+        "data": {
+          "user_id": "={{ $json.user_id }}",
+          "message": "={{ $json.message }}",
+          "type": "={{ $json.type || 'info' }}",
+          "channel": "={{ $json.channel || 'in_app' }}",
+          "read": false
+        }
+      },
+      "id": "storeNotification",
+      "name": "Store Notification",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [680, 300],
+      "credentials": { "postgres": "postgres-cred" },
+      "retryOnFail": true,
+      "maxRetries": 3,
+      "retryWait": 5000
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "table": "audit_logs",
+        "data": {
+          "user_id": "={{ $json.user_id }}",
+          "action": "notification:sent",
+          "resource": "notification",
+          "metadata": {
+            "type": "={{ $json.type || 'info' }}",
+            "channel": "={{ $json.channel || 'in_app' }}"
+          }
+        }
+      },
+      "id": "auditLog",
+      "name": "Audit Log Notification",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [900, 300],
+      "credentials": { "postgres": "postgres-cred" }
+    },
+    {
+      "parameters": {
+        "channel": "={{ $json.channel || 'telegram' }}",
+        "chatId": "={{ $json.chat_id }}",
+        "text": "={{ $json.message }}"
+      },
+      "id": "sendNotification",
+      "name": "Send Notification",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [1120, 300],
+      "credentials": { "telegram": "telegram-cred" },
+      "retryOnFail": true,
+      "maxRetries": 3,
+      "retryWait": 5000
+    }
+  ],
+  "connections": {
+    "Duplicate Protection": {
+      "main": [[{ "node": "Store Notification", "type": "main", "index": 0 }]]
+    },
+    "Store Notification": {
+      "main": [
+        [{ "node": "Audit Log Notification", "type": "main", "index": 0 }],
+        [{ "node": "Send Notification", "type": "main", "index": 0 }]
+      ]
+    },
+    "Notification Webhook": {
+      "main": [[{ "node": "Duplicate Protection", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {},
+  "id": "notifications-workflow"
+}

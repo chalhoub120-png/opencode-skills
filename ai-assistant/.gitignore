@@ -1,0 +1,33 @@
+# Secrets - NEVER commit
+.env
+.env.local
+*.key
+*.pem
+*secret*.json
+credentials.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# Node
+node_modules/
+
+# Data volumes
+data/
+*.db
+*.sqlite3
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Logs
+*.log
+logs/

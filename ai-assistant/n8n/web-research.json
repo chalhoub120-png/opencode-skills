@@ -1,0 +1,107 @@
+{
+  "name": "Web Research",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "research-webhook",
+        "responseMode": "onReceived"
+      },
+      "id": "webhook",
+      "name": "Research Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://www.google.com/search?q={{ $json.query }}",
+        "responseFormat": "text"
+      },
+      "id": "searchWeb",
+      "name": "Web Search",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [460, 300],
+      "retryOnFail": true,
+      "maxRetries": 2,
+      "retryWait": 10000
+    },
+    {
+      "parameters": {
+        "text": "Search results for: {{ $json.query }}\n\n{{ $json.searchResults }}\n\nSource: Web",
+        "workflowId": "opencode-research-summary",
+        "data": {
+          "query": "={{ $json.query }}",
+          "results": "={{ $json.searchResults }}",
+          "language": "={{ $json.language || 'ar' }}"
+        }
+      },
+      "id": "summarizeResearch",
+      "name": "Summarize Research",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [680, 300],
+      "authentication": {
+        "genericAuthType": "header",
+        "header": {
+          "name": "Authorization",
+          "value": "=Bearer {{$credentials.opencodeApiKey}}"
+        }
+      },
+      "retryOnFail": true,
+      "maxRetries": 3,
+      "retryWait": 5000
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "table": "audit_logs",
+        "data": {
+          "user_id": "={{ $json.user_id }}",
+          "action": "web_research:completed",
+          "resource": "research",
+          "metadata": {
+            "query": "={{ $json.query }}",
+            "language": "={{ $json.language || 'ar' }}"
+          }
+        }
+      },
+      "id": "auditLog",
+      "name": "Audit Log Research",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [900, 300],
+      "credentials": { "postgres": "postgres-cred" }
+    },
+    {
+      "parameters": {
+        "text": "ملخص البحث لـ '{{ $json.query }}':\n{{ $json.summary }}\n\nالمصادر: {{ $json.sources }}",
+        "channel": "telegram",
+        "chatId": "={{ $json.notify_chat_id }}"
+      },
+      "id": "notifyResearch",
+      "name": "Notify Research",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [1120, 300],
+      "credentials": { "telegram": "telegram-cred" }
+    }
+  ],
+  "connections": {
+    "Web Search": {
+      "main": [[{ "node": "Summarize Research", "type": "main", "index": 0 }]]
+    },
+    "Summarize Research": {
+      "main": [[{ "node": "Audit Log Research", "type": "main", "index": 0 }]]
+    },
+    "Audit Log Research": {
+      "main": [[{ "node": "Notify Research", "type": "main", "index": 0 }]]
+    },
+    "Research Webhook": {
+      "main": [[{ "node": "Web Search", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {},
+  "id": "web-research-workflow"
+}
