@@ -1,26 +1,36 @@
 """LLM model routing based on task type and language.
 
-Routing reflects the measured CPU-only deployment (no CUDA):
-- Coding tasks       -> gemma4:e2b
-- Reasoning tasks    -> deepseek-r1:14b (falls back to gemma4:e2b on CPU)
-- General tasks      -> gemma4:e2b
+Unified router with provider abstraction:
+- Ollama: primary provider (local, free, private) - deepseek-r1:14b, gemma4:e2b
+- Claude API: optional provider for complex English reasoning tasks
+- Falls back to Ollama on Claude failure or cost limit
 
-Arabic/Lebanese and English both route to the same CPU-friendly models;
-the language only affects the prompt, not the model choice, because the
-larger 32B variants do not fit the available hardware.
+User-facing languages (Arabic, Lebanese, English) are handled in the
+dashboard UI layer via LABELS. This module handles model/provider selection
+in English code.
 """
 
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
+import os
+import logging
+import uuid
 
 from pydantic import BaseModel, ValidationError, validator
 
-from llm.client import OllamaClient
+from llm.provider import BaseLLMProvider, LLMRequest, LLMResponse, LLMProviderType
+from llm.ollama_provider import OllamaProvider
+from llm.claude_provider import ClaudeProvider
+
+
+logger = logging.getLogger(__name__)
 
 
 class TaskType(str, Enum):
+    """Task classification for model routing."""
+
     CODING = "coding"
     REASONING = "reasoning"
     GENERAL = "general"
@@ -31,6 +41,8 @@ class TaskType(str, Enum):
 
 
 class LanguageCode(str, Enum):
+    """Supported language codes."""
+
     AR = "ar"  # Modern Standard Arabic
     LB = "lb"  # Lebanese dialect
     EN = "en"  # English
@@ -58,8 +70,29 @@ class LLMResponseSchema(BaseModel):
 
 
 class LLMRouter:
-    """Routes tasks to the appropriate Ollama model, language-aware."""
+    """Unified LLM model router - Ollama primary, Claude API optional for complex tasks.
 
+    Routes tasks based on type and language:
+    - Ollama: primary, free, private (deepseek-r1:14b, gemma4:e2b)
+    - Claude API: optional, for complex English reasoning tasks
+    - Falls back to Ollama on Claude failure or cost limit
+    """
+
+    # From claude-api/managed-agents-core.md: task to agent mapping
+    TASK_TO_AGENT: Dict[str, str] = {
+        "coding": "developer",
+        "reasoning": "analyst",
+        "general": "ceo",
+        "automation": "ceo",
+        "research": "researcher",
+        "security": "security",
+        "legal": "legal",
+    }
+
+    # Tasks that prefer Claude API (adaptive thinking, stronger model)
+    CLAUDE_PREFERRED_TASKS: set = {"reasoning", "complex", "analysis"}
+
+    # Default model mappings (backward compatible with existing tests)
     DEFAULT_MODELS: Dict[TaskType, str] = {
         TaskType.CODING: "gemma4:e2b",
         TaskType.REASONING: "deepseek-r1:14b",
@@ -70,7 +103,7 @@ class LLMRouter:
         TaskType.LEGAL: "gemma4:e2b",
     }
 
-    # Arabic-preferred models (Qwen3 has strong multilingual/Arabic support)
+    # Arabic-preferred models (gemma4:e2b for Arabic fluency)
     ARABIC_MODELS: Dict[TaskType, str] = {
         TaskType.CODING: "gemma4:e2b",
         TaskType.REASONING: "gemma4:e2b",
@@ -94,10 +127,34 @@ class LLMRouter:
     def __init__(
         self,
         custom_models: Dict[TaskType, str] | None = None,
+        max_claude_cost_per_request: float = 0.10,
     ) -> None:
         self.models = dict(self.DEFAULT_MODELS)
         if custom_models:
             self.models.update(custom_models)
+
+        self.max_claude_cost_per_request: float = max_claude_cost_per_request
+
+        # Initialize provider abstraction layer
+        self.providers: Dict[str, BaseLLMProvider] = {}
+        self._setup_providers()
+
+    def _setup_providers(self):
+        """Initialize providers. Ollama always, Claude only if API key present."""
+        # Ollama - always available, primary
+        self.providers["ollama"] = OllamaProvider(
+            base_url=os.getenv("OLLAMA_HOST", "http://127.0.0.1:11434"),
+            model=os.getenv("OLLAMA_MODEL", "deepseek-r1:14b"),
+        )
+
+        # Claude API - optional, only if API key configured
+        # Security: key is read from env var inside ClaudeProvider, never stored here
+        claude_key = os.getenv("ANTHROPIC_API_KEY")
+        if claude_key:
+            self.providers["claude"] = ClaudeProvider(
+                api_key_env_var="ANTHROPIC_API_KEY",
+                model=os.getenv("CLAUDE_MODEL", "claude-opus-5-5"),
+            )
 
     def select_model(
         self,
@@ -108,6 +165,8 @@ class LLMRouter:
 
         Arabic/Lebanese queries use Qwen3-preferred routing for better
         Arabic fluency. English queries use the default routing.
+
+        Backward compatible with existing tests.
         """
         if language in (LanguageCode.AR, LanguageCode.LB):
             return self.ARABIC_MODELS.get(task_type, self.models[TaskType.GENERAL])
@@ -118,7 +177,10 @@ class LLMRouter:
         return self.FALLBACK_MODELS.get(task_type, self.models[TaskType.GENERAL])
 
     def route_by_keywords(self, message: str) -> TaskType:
-        """Heuristic routing based on message content (Arabic + English)."""
+        """Heuristic routing based on message content (Arabic + English).
+
+        Backward compatible with existing tests.
+        """
         text = message.lower()
         coding_kws = [
             "code",
@@ -244,33 +306,126 @@ class LLMRouter:
         Never executes code or queries from model output.
         """
         try:
-            # Try to parse as JSON if the model returned structured output
             import json
 
-            data = json.loads(raw_answer)
-            return LLMResponseSchema(**data)
+            # Try to parse as JSON if the model returned structured output
+            parsed = json.loads(raw_answer)
+            return LLMResponseSchema(**parsed)
         except (json.JSONDecodeError, ValidationError):
-            # Treat entire response as the answer text
-            return LLMResponseSchema(
-                answer=raw_answer,
-                language=language,
-                confidence=0.6,
-                sources=[],
-                needs_clarification=False,
-            )
+            pass
 
-    async def generate_structured(
-        self,
-        ollama_client: OllamaClient,
-        model: str,
-        messages: list[dict[str, str]],
-        language: str = "ar",
-        temperature: float = 0.3,
-    ) -> LLMResponseSchema:
-        """Generate a response and validate it against the structured schema."""
-        response = await ollama_client.chat(
-            model=model,
-            messages=messages,
-            temperature=temperature,
+        return LLMResponseSchema(
+            answer=raw_answer,
+            language=language,
+            confidence=0.5,
+            sources=[],
+            needs_clarification=False,
+            clarification_question=None,
         )
-        return self.validate_response(response.content, language=language)
+
+    def select_provider(
+        self,
+        task_type: str,
+        language: str,
+        force_claude: bool = False,
+    ) -> str:
+        """Select provider for a given task.
+
+        Rules:
+        1. Ollama is primary for all tasks (privacy, cost-free)
+        2. Claude API only for complex English reasoning if available
+        3. Fallback to Ollama on Claude failure or cost limit
+        """
+        if force_claude and "claude" in self.providers:
+            return "claude"
+
+        if (
+            task_type in self.CLAUDE_PREFERRED_TASKS
+            and language == "en"
+            and "claude" in self.providers
+        ):
+            return "claude"
+
+        return "ollama"
+
+    async def generate(
+        self,
+        task_type: str,
+        message: str,
+        language: str = "en",
+        force_claude: bool = False,
+    ) -> LLMResponse:
+        """Generate response with automatic provider selection and fallback.
+
+        Args:
+            task_type: Type of task (coding, reasoning, general, etc.)
+            message: User message text
+            language: Language code (ar, en, lb)
+            force_claude: Force Claude API even if not preferred
+
+        Returns:
+            LLMResponse with answer, provider, model, cost info
+        """
+        request_id = str(uuid.uuid4())
+        provider_name = self.select_provider(task_type, language, force_claude)
+        provider = self.providers[provider_name]
+
+        request = LLMRequest(
+            message=message,
+            language=language,
+            task_type=task_type,
+            request_id=request_id,
+        )
+
+        try:
+            response = await provider.generate(request)
+
+            # Check Claude cost limit before accepting response
+            if (
+                provider_name == "claude"
+                and response.cost_usd
+                and response.cost_usd > self.max_claude_cost_per_request
+            ):
+                logger.warning(
+                    "Claude cost %.4f exceeded limit %.4f - falling back to Ollama",
+                    response.cost_usd,
+                    self.max_claude_cost_per_request,
+                )
+                fallback = self.providers["ollama"]
+                fallback_response = await fallback.generate(request)
+                fallback_response.fallback_used = True
+                return fallback_response
+
+            return response
+
+        except Exception as exc:
+            # Fallback to Ollama if Claude fails
+            if provider_name == "claude" and "ollama" in self.providers:
+                logger.warning(
+                    "Claude failed: %s - falling back to Ollama (request_id=%s)",
+                    type(exc).__name__,
+                    request_id,
+                )
+                fallback = self.providers["ollama"]
+                fallback_response = await fallback.generate(request)
+                fallback_response.fallback_used = True
+                return fallback_response
+            raise
+
+    def get_agent_for_task(self, task_type: str) -> str:
+        """From managed-agents-core.md: return agent name for task type."""
+        return self.TASK_TO_AGENT.get(task_type, "ceo")
+
+    def get_available_providers(self) -> List[str]:
+        """Return list of available provider names."""
+        return [name for name, p in self.providers.items() if p.is_available()]
+
+    def estimate_claude_cost(
+        self,
+        tokens_in: int,
+        tokens_out: int,
+    ) -> float:
+        """Estimate Claude API cost before sending request."""
+        if "claude" in self.providers:
+            return self.providers["claude"].get_cost_estimate(tokens_in, tokens_out)
+        return 0.0
