@@ -1,2449 +1,2241 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
-  <head>
+<head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>المساعد المؤسسي للذكاء الاصطناعي | Enterprise AI Assistant</title>
     <style>
-      * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-      }
-      body {
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-        background: #f5f7fa;
-        color: #222;
-        direction: rtl;
-      }
-      /* English direction override */
-      body[dir="ltr"] {
-        direction: ltr;
-        text-align: left;
-      }
-      body[dir="rtl"] {
-        direction: rtl;
-        text-align: right;
-      }
-
-      /* Language-aware text alignment */
-      .text-ar {
-        direction: rtl;
-        text-align: right;
-      }
-      .text-en {
-        direction: ltr;
-        text-align: left;
-      }
-
-      .sidebar {
-        width: 260px;
-        height: 100vh;
-        background: #1f2937;
-        color: #fff;
-        position: fixed;
-        top: 0;
-        right: 0;
-        padding: 20px;
-        display: flex;
-        flex-direction: column;
-      }
-      body[dir="ltr"] .sidebar {
-        right: auto;
-        left: 0;
-      }
-
-      .sidebar h2 {
-        font-size: 1.25rem;
-        margin-bottom: 24px;
-        color: #f9fafb;
-      }
-      .sidebar nav a {
-        display: block;
-        padding: 10px 14px;
-        margin-bottom: 8px;
-        color: #d1d5db;
-        text-decoration: none;
-        border-radius: 6px;
-        font-size: 0.95rem;
-      }
-      .sidebar nav a:hover,
-      .sidebar nav a.active {
-        background: #374151;
-        color: #fff;
-      }
-      .main {
-        margin-right: 260px;
-        padding: 30px;
-      }
-      body[dir="ltr"] .main {
-        margin-right: 0;
-        margin-left: 260px;
-      }
-
-      header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 24px;
-      }
-      header h1 {
-        font-size: 1.5rem;
-        color: #111827;
-      }
-      .btn {
-        padding: 8px 16px;
-        border: none;
-        border-radius: 6px;
-        background: #2563eb;
-        color: #fff;
-        cursor: pointer;
-        font-size: 0.95rem;
-      }
-      .btn:hover {
-        background: #1d4ed8;
-      }
-      .btn.secondary {
-        background: #6b7280;
-      }
-      .btn.secondary:hover {
-        background: #4b5563;
-      }
-      .btn.danger {
-        background: #dc2626;
-      }
-      .btn.danger:hover {
-        background: #b91c1c;
-      }
-
-      .card {
-        background: #fff;
-        border-radius: 8px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        padding: 20px;
-        margin-bottom: 20px;
-      }
-      .grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 20px;
-      }
-      .stat-card {
-        background: #fff;
-        border-radius: 8px;
-        padding: 20px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-      }
-      .stat-card .value {
-        font-size: 2rem;
-        font-weight: 700;
-        color: #2563eb;
-      }
-      .stat-card .label {
-        color: #6b7280;
-        font-size: 0.9rem;
-      }
-      #chat-area {
-        height: 400px;
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        padding: 16px;
-        overflow-y: auto;
-        background: #fafafa;
-        margin-bottom: 16px;
-      }
-      .msg {
-        margin-bottom: 12px;
-        padding: 10px 14px;
-        border-radius: 8px;
-        max-width: 85%;
-        line-height: 1.5;
-      }
-      .msg.user {
-        background: #dbeafe;
-        margin-left: auto;
-        text-align: left;
-      }
-      .msg.assistant {
-        background: #f3f4f6;
-        margin-right: auto;
-        text-align: right;
-      }
-      body[dir="ltr"] .msg.user {
-        margin-left: 0;
-        margin-right: auto;
-        text-align: right;
-      }
-      body[dir="ltr"] .msg.assistant {
-        margin-right: 0;
-        margin-left: auto;
-        text-align: left;
-      }
-
-      .msg .meta {
-        font-size: 0.75rem;
-        color: #6b7280;
-        margin-top: 4px;
-        display: block;
-      }
-      .input-row {
-        display: flex;
-        gap: 8px;
-        align-items: center;
-      }
-      .input-row input[type="text"] {
-        flex: 1;
-        padding: 10px 14px;
-        border: 1px solid #d1d5db;
-        border-radius: 6px;
-        font-size: 0.95rem;
-      }
-      .voice-btn {
-        width: 44px;
-        height: 44px;
-        border-radius: 50%;
-        background: #10b981;
-        color: #fff;
-        border: none;
-        cursor: pointer;
-        font-size: 1.2rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-      .voice-btn.recording {
-        background: #ef4444;
-        animation: pulse 1.5s infinite;
-      }
-      .voice-btn:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
-      @keyframes pulse {
-        0% {
-          opacity: 1;
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
-        50% {
-          opacity: 0.6;
+
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --secondary: #64748b;
+            --success: #059669;
+            --danger: #dc2626;
+            --warning: #d97706;
+            --bg-body: #f8fafc;
+            --bg-sidebar: #0f172a;
+            --bg-card: #ffffff;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+            --border: #e2e8f0;
+            --radius: 12px;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        100% {
-          opacity: 1;
+
+        [data-theme="dark"] {
+            --bg-body: #0f172a;
+            --bg-sidebar: #020617;
+            --bg-card: #1e293b;
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --text-muted: #64748b;
+            --border: #334155;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.5);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5);
         }
-      }
-      .voice-support {
-        margin-top: 8px;
-        font-size: 0.85rem;
-        color: #6b7280;
-      }
-      .lang-selector {
-        display: flex;
-        gap: 4px;
-        margin-left: 12px;
-        padding: 4px 8px;
-        border: 1px solid #d1d5db;
-        border-radius: 6px;
-        background: #fff;
-      }
-      .lang-btn {
-        padding: 4px 10px;
-        border: none;
-        border-radius: 4px;
-        background: transparent;
-        color: #6b7280;
-        cursor: pointer;
-        font-size: 0.85rem;
-      }
-      .lang-btn.active {
-        background: #2563eb;
-        color: #fff;
-      }
-      .lang-btn:hover {
-        background: #e5e7eb;
-      }
-      .hidden {
-        display: none;
-      }
-      .dolby-panel {
-        grid-column: 1 / -1;
-      }
-      .dolby-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        flex-wrap: wrap;
-        margin-bottom: 14px;
-      }
-      .dolby-badge {
-        font-size: 0.75rem;
-        font-weight: 700;
-        letter-spacing: 0.04em;
-        padding: 4px 10px;
-        border-radius: 999px;
-        background: #111827;
-        color: #fbbf24;
-      }
-      .dolby-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 16px;
-      }
-      .dolby-group {
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        padding: 12px;
-        background: #f9fafb;
-      }
-      .dolby-group h4 {
-        font-size: 0.9rem;
-        color: #111827;
-        margin-bottom: 10px;
-      }
-      .dolby-row {
-        display: grid;
-        grid-template-columns: 1fr 28px;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 10px;
-        font-size: 0.85rem;
-        color: #374151;
-      }
-      .dolby-row output {
-        text-align: center;
-        font-variant-numeric: tabular-nums;
-        color: #111827;
-        font-weight: 600;
-      }
-      .dolby-row input[type="range"] {
-        width: 100%;
-      }
-      .dolby-row select {
-        width: 100%;
-        padding: 6px 8px;
-        border: 1px solid #d1d5db;
-        border-radius: 6px;
-        background: #fff;
-        font-size: 0.9rem;
-      }
-      .check-row {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 8px;
-        font-size: 0.85rem;
-        color: #374151;
-      }
-      .check-row input[type="checkbox"] {
-        width: 16px;
-        height: 16px;
-        accent-color: #2563eb;
-      }
-      .dolby-actions {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-        margin-top: 12px;
-      }
-      .dolby-actions .btn {
-        padding: 6px 12px;
-        font-size: 0.85rem;
-      }
-      .badge {
-        display: inline-block;
-        padding: 2px 8px;
-        border-radius: 12px;
-        font-size: 0.75rem;
-        background: #e5e7eb;
-        color: #374151;
-      }
-      .badge.ar {
-        background: #dbeafe;
-        color: #1e40af;
-      }
-      .badge.en {
-        background: #dcfce7;
-        color: #166534;
-      }
-      .audio-player {
-        margin-top: 8px;
-        width: 100%;
-      }
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 12px;
-      }
-      th,
-      td {
-        text-align: right;
-        padding: 10px;
-        border-bottom: 1px solid #e5e7eb;
-      }
-      body[dir="ltr"] th,
-      body[dir="ltr"] td {
-        text-align: left;
-      }
-      th {
-        background: #f9fafb;
-        font-weight: 600;
-        color: #374151;
-      }
-      .citation {
-        font-size: 0.85rem;
-        color: #4b5563;
-        border-left: 3px solid #2563eb;
-        padding-right: 8px;
-        margin-top: 8px;
-        background: #f9fafb;
-        border-radius: 0 4px 4px 0;
-      }
-      body[dir="ltr"] .citation {
-        border-left: none;
-        border-right: 3px solid #2563eb;
-        padding-right: 0;
-        padding-left: 8px;
-        border-radius: 4px 0 0 4px;
-      }
-      .lang-indicator {
-        display: inline-block;
-        margin-left: 8px;
-        padding: 2px 8px;
-        border-radius: 4px;
-        background: #2563eb;
-        color: #fff;
-        font-size: 0.75rem;
-      }
-      .error-msg {
-        color: #dc2626;
-        font-size: 0.85rem;
-        margin-top: 8px;
-      }
-      .approval-badge {
-        background: #f59e0b;
-        color: #fff;
-        font-size: 0.75rem;
-        padding: 2px 8px;
-        border-radius: 12px;
-        margin-left: 6px;
-      }
-      body[dir="ltr"] .approval-badge {
-        margin-left: 0;
-        margin-right: 6px;
-      }
 
-      /* RTL-aware spacing for mixed content */
-      .rtl {
-        direction: rtl;
-      }
-      .ltr {
-        direction: ltr;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="sidebar">
-      <h2 id="sidebar-title">المساعد المؤسسي</h2>
-      <nav>
-        <a href="#" onclick="showPage('chat')" class="active" id="nav-chat"
-          >💬 <span id="nav-chat-text">المحادثة</span></a
-        >
-        <a href="#" onclick="showPage('agents')" id="nav-agents"
-          >🤖 <span id="nav-agents-text">الوكلاء</span></a
-        >
-        <a href="#" onclick="showPage('knowledge')" id="nav-knowledge"
-          >📚 <span id="nav-knowledge-text">قاعدة المعرفة</span></a
-        >
-        <a href="#" onclick="showPage('memory')" id="nav-memory"
-          >🧠 <span id="nav-memory-text">الذاكرة</span></a
-        >
-        <a href="#" onclick="showPage('workflows')" id="nav-workflows"
-          >⚙️ <span id="nav-workflows-text">سير العمل</span></a
-        >
-        <a href="#" onclick="showPage('settings')" id="nav-settings"
-          >⚙️ <span id="nav-settings-text">الإعدادات</span></a
-        >
-        <a href="#" onclick="showPage('totp')" id="nav-totp"
-          >🔐 <span id="nav-totp-text">المصادقة الثنائية (TOTP)</span></a
-        >
-      </nav>
-    </div>
-    <div class="main">
-      <header>
-        <div>
-          <h1 id="page-title">المحادثة</h1>
-          <div class="lang-selector" id="lang-selector">
-            <button
-              class="lang-btn active"
-              id="lang-ar"
-              onclick="setLanguage('ar')"
-            >
-              العربية
-            </button>
-            <button class="lang-btn" id="lang-en" onclick="setLanguage('en')">
-              English
-            </button>
-            <button
-              class="lang-btn"
-              id="lang-auto"
-              onclick="setLanguage('auto')"
-            >
-              Auto
-            </button>
-          </div>
-        </div>
-        <button
-          class="btn secondary"
-          id="logout-btn"
-          onclick="location.reload()"
-        >
-          <span id="logout-text">تسجيل الخروج</span>
-        </button>
-      </header>
+        html {
+            scroll-behavior: smooth;
+        }
 
-      <!-- Chat Page -->
-      <section id="page-chat" class="card">
-        <div id="chat-area"></div>
-        <div class="input-row">
-          <input type="text" id="chat-input" placeholder="اكتب رسالتك..." />
-          <button class="voice-btn" id="voice-btn" title="اضغط للتحدث">
-            🎤
-          </button>
-          <button class="btn" id="send-btn">
-            <span id="send-text">إرسال</span>
-          </button>
-        </div>
-        <div class="voice-support" id="voice-support-text">
-          الصوت: اضغط للتحدث • كشف النشاط الصوتي • كتم الضوضاء • كشف الصمت
-        </div>
-        <div id="chat-error" class="error-msg hidden"></div>
-      </section>
+        body {
+            font-family: "Segoe UI", "Tahoma", "Cairo", sans-serif;
+            background: var(--bg-body);
+            color: var(--text-primary);
+            direction: rtl;
+            line-height: 1.6;
+            transition: var(--transition);
+            overflow-x: hidden;
+        }
 
-      <!-- Agents Page -->
-      <section id="page-agents" class="card hidden">
-        <h3 id="agents-title">الوكلاء المتخصصون</h3>
-        <table>
-          <thead>
-            <tr>
-              <th id="col-agent">الوكيل</th>
-              <th id="col-type">النوع</th>
-              <th id="col-desc">الوصف</th>
-            </tr>
-          </thead>
-          <tbody id="agents-table"></tbody>
-        </table>
-      </section>
+        body[dir="ltr"] {
+            direction: ltr;
+        }
 
-      <!-- Knowledge Page -->
-      <section id="page-knowledge" class="card hidden">
-        <h3 id="kb-title">البحث في قاعدة المعرفة</h3>
-        <div style="margin-bottom: 16px">
-          <input
-            type="text"
-            id="kb-query"
-            placeholder="أدخل استعلام البحث..."
-          />
-          <button class="btn" onclick="searchKnowledge()">
-            <span id="kb-search-text">بحث</span>
-          </button>
-          <span
-            id="kb-cross-lang-text"
-            style="font-size: 0.85rem; color: #6b7280; margin-right: 8px"
-            >(يدعم البحث عبر اللغات)</span
-          >
-        </div>
-        <div id="kb-results"></div>
-      </section>
+        /* ---- Scrollbar ---- */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-body);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
 
-      <!-- Memory Page -->
-      <section id="page-memory" class="card hidden">
-        <h3 id="memory-title">ذاكرة المحادثة</h3>
-        <div id="memory-list"></div>
-      </section>
+        /* ---- Layout ---- */
+        .app {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
 
-      <!-- Workflows Page -->
-      <section id="page-workflows" class="card hidden">
-        <h3 id="workflows-title">سير العمل (n8n)</h3>
-        <p
-          id="workflows-approval-note"
-          style="color: #6b7280; font-size: 0.9rem; margin-bottom: 12px"
-        >
-          الإجراءات الخارجية تتطلب موافقة بشرية قبل التنفيذ.
-        </p>
-        <p
-          id="workflows-status-line"
-          style="color: #374151; font-size: 0.9rem; margin-bottom: 12px"
-        ></p>
-        <table>
-          <thead>
-            <tr>
-              <th id="col-workflow">الWorkflow</th>
-              <th id="col-wf-type">النوع</th>
-              <th id="col-wf-status">الحالة</th>
-            </tr>
-          </thead>
-          <tbody id="workflows-table"></tbody>
-        </table>
-        <div
-          style="
+        .sidebar {
+            width: 280px;
+            background: var(--bg-sidebar);
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 100;
+            box-shadow: -4px 0 12px rgba(0,0,0,0.15);
+            transition: var(--transition);
+        }
+
+        body[dir="ltr"] .sidebar {
+            right: auto;
+            left: 0;
+            box-shadow: 4px 0 12px rgba(0,0,0,0.15);
+        }
+
+        .sidebar-header {
+            padding: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sidebar-header .logo {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary), #7c3aed);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .sidebar-header h2 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .sidebar nav {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 10px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: var(--transition);
+            margin-bottom: 6px;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            width: 100%;
+            text-align: right;
+        }
+
+        body[dir="ltr"] .nav-item {
+            text-align: left;
+        }
+
+        .nav-item:hover,
+        .nav-item.active {
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--primary);
+        }
+
+        .nav-item.active {
+            border-right: 3px solid var(--primary);
+        }
+
+        body[dir="ltr"] .nav-item.active {
+            border-right: none;
+            border-left: 3px solid var(--primary);
+        }
+
+        .nav-item .icon {
+            font-size: 1.2rem;
+            width: 28px;
+            text-align: center;
+        }
+
+        .theme-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .theme-toggle span {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .theme-btn {
+            background: var(--border);
+            border: none;
+            width: 44px;
+            height: 24px;
+            border-radius: 12px;
+            cursor: pointer;
+            position: relative;
+            transition: var(--transition);
+        }
+
+        .theme-btn::after {
+            content: "";
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            width: 20px;
+            height: 20px;
+            background: #fff;
+            border-radius: 50%;
+            transition: var(--transition);
+        }
+
+        [data-theme="dark"] .theme-btn {
+            background: var(--primary);
+        }
+
+        [data-theme="dark"] .theme-btn::after {
+            right: auto;
+            left: 2px;
+        }
+
+        /* ---- Main Content ---- */
+        .main {
+            margin-right: 280px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        body[dir="ltr"] .main {
+            margin-right: 0;
+            margin-left: 280px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 24px 32px;
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+            z-index: 50;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .page-subtitle {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .lang-selector {
+            display: flex;
+            gap: 4px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 4px;
+            background: var(--bg-body);
+        }
+
+        .lang-btn {
+            padding: 6px 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: var(--transition);
+            background: transparent;
+        }
+
+        .lang-btn.active {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn-secondary {
+            background: var(--border);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--text-muted);
+            color: #fff;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: #fff;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* ---- Pages ---- */
+        .pages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px 32px;
+            background: var(--bg-body);
+        }
+
+        .page {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .page-header {
+            margin-bottom: 24px;
+        }
+
+        .page-header h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .page-header p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        /* ---- Cards ---- */
+        .card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .card-header h4 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 20px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+
+        .stat-meta {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        /* ---- Chat ---- */
+        #chat-area {
+            height: 50vh;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: var(--bg-body);
+            padding: 20px;
+            overflow-y: auto;
+            margin-bottom: 16px;
+            display: flex;
+            flex-direction: column-reverse;
+        }
+
+        body[dir="ltr"] #chat-area {
+            flex-direction: column;
+        }
+
+        .msg {
+            margin-bottom: 16px;
+            padding: 14px 18px;
+            border-radius: 14px;
+            max-width: 85%;
+            line-height: 1.7;
+            font-size: 0.95rem;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        body[dir="ltr"] .msg.user {
+            margin-left: 0;
+            margin-right: auto;
+        }
+
+        .msg.user {
+            background: var(--primary);
+            color: #fff;
+            margin-left: auto;
+            border-bottom-right-radius: 4px;
+        }
+
+        .msg.assistant {
+            background: var(--bg-body);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+            margin-right: auto;
+            border-bottom-left-radius: 4px;
+        }
+
+        .msg .meta {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 6px;
+            display: block;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .input-row input[type="text"] {
+            flex: 1;
+            padding: 14px 18px;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            font-size: 0.95rem;
+            background: var(--bg-body);
+            color: var(--text-primary);
+            transition: var(--transition);
+        }
+
+        .input-row input[type="text"]:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .voice-btn {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--success);
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            box-shadow: var(--shadow);
+        }
+
+        .voice-btn:hover {
+            background: #047857;
+            transform: translateY(-2px);
+        }
+
+        .voice-btn.recording {
+            background: var(--danger);
+            animation: pulse 1.5s infinite;
+        }
+
+        .voice-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
+            70% { box-shadow: 0 0 0 12px rgba(220, 38, 38, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+        }
+
+        .voice-support {
+            margin-top: 8px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        .error-msg {
+            color: var(--danger);
+            font-size: 0.85rem;
+            margin-top: 8px;
+            display: none;
+        }
+
+        /* ---- Table ---- */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+        }
+
+        th, td {
+            text-align: right;
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        body[dir="ltr"] th,
+        body[dir="ltr"] td {
+            text-align: left;
+        }
+
+        th {
+            background: var(--bg-body);
+            font-weight: 700;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        tr:hover {
+            background: var(--bg-body);
+        }
+
+        /* ---- Badges ---- */
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge.ar { background: #dbeafe; color: #1e40af; }
+        .badge.en { background: #dcfce7; color: #166534; }
+        .badge.lb { background: #fce7f3; color: #be185d; }
+        .badge.active { background: var(--success); color: #fff; }
+        .badge.pending { background: var(--warning); color: #fff; }
+
+        /* ---- TOTP ---- */
+        .totp-card {
+            background: linear-gradient(135deg, var(--primary), #7c3aed);
+            border-radius: 20px;
+            padding: 32px;
+            color: #fff;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .totp-card h4 {
+            font-size: 1.25rem;
+            margin-bottom: 8px;
+        }
+
+        .totp-card p {
+            opacity: 0.9;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+        }
+
+        .secret-box {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            word-break: break-all;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .secret-box input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-family: inherit;
+            font-size: inherit;
+        }
+
+        .copy-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: #fff;
+            padding: 8px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: var(--transition);
+        }
+
+        .copy-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .verify-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 32px;
+            box-shadow: var(--shadow);
+        }
+
+        .verify-group {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .verify-group input[type="text"] {
+            width: 130px;
+            padding: 14px 16px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            font-family: monospace;
+            font-size: 1.25rem;
+            text-align: center;
+            letter-spacing: 6px;
+            background: var(--bg-body);
+        }
+
+        .result-box {
+            margin-top: 12px;
+            min-height: 24px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .success-msg { color: var(--success); }
+        .error-msg { color: var(--danger); }
+
+        /* ---- Dolby ---- */
+        .dolby-panel {
+            grid-column: 1 / -1;
+        }
+
+        .dolby-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 14px;
+        }
+
+        .dolby-badge {
+            font-size: 0.75rem;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: #111827;
+            color: #fbbf24;
+        }
+
+        .dolby-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+        }
+
+        .dolby-group {
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            background: var(--bg-body);
+        }
+
+        .dolby-group h4 {
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+        }
+
+        .dolby-row {
+            display: grid;
+            grid-template-columns: 1fr 28px;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .dolby-row output {
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .dolby-row input[type="range"] {
+            width: 100%;
+        }
+
+        .dolby-row select {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-card);
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+
+        .check-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .check-row input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--primary);
+        }
+
+        .dolby-actions {
             display: flex;
             gap: 8px;
             flex-wrap: wrap;
-            align-items: center;
-            margin-top: 14px;
-          "
-        >
-          <input
-            type="text"
-            id="workflow-id"
-            placeholder="Workflow ID"
-            style="
-              padding: 8px 10px;
-              border: 1px solid #d1d5db;
-              border-radius: 6px;
-              min-width: 200px;
-            "
-          />
-          <button class="btn secondary" id="workflow-run-btn">
-            <span id="workflow-run-text">تنفيذ (يتطلب موافقة)</span>
-          </button>
-          <a
-            class="btn"
-            id="workflow-open-btn"
-            href="http://127.0.0.1:5679/"
-            target="_blank"
-            rel="noopener"
-            >فتح محرر n8n</a
-          >
-        </div>
-        <div
-          id="workflow-result"
-          class="voice-support"
-          style="margin-top: 8px"
-        ></div>
-      </section>
+            margin-top: 12px;
+        }
 
-      <!-- Settings Page -->
-      <section id="page-settings" class="card hidden">
-        <h3 id="settings-title">الإعدادات</h3>
-        <div class="grid">
-          <div class="stat-card">
-            <div class="label" id="label-coding-model">نموذج البرمجة</div>
-            <div class="value">Qwen3 32B</div>
-          </div>
-          <div class="stat-card">
-            <div class="label" id="label-reasoning-model">نموذج الاستدلال</div>
-            <div class="value">DeepSeek R1</div>
-          </div>
-          <div class="stat-card">
-            <div class="label" id="label-stt">محرك STT</div>
-            <div class="value">Faster Whisper</div>
-            <div class="meta" id="status-stt" style="margin-top: 6px"></div>
-          </div>
-          <div class="stat-card">
-            <div class="label" id="label-tts">محرك TTS</div>
-            <div class="value">Piper</div>
-            <div class="meta" id="status-tts" style="margin-top: 6px"></div>
-            <button
-              class="btn secondary"
-              id="tts-test-btn"
-              style="margin-top: 8px"
-            >
-              <span id="tts-test-text">اختبار السمّاعة</span>
-            </button>
-          </div>
-          <div class="stat-card">
-            <div class="label" id="label-vector">قاعدة المتجهات</div>
-            <div class="value">Qdrant</div>
-          </div>
-          <div class="stat-card">
-            <div class="label" id="label-db">قاعدة البيانات</div>
-            <div class="value">PostgreSQL</div>
-          </div>
-          <div class="stat-card dolby-panel">
-            <div class="dolby-head">
-              <div>
-                <div class="label" id="label-dolby-title">صوت Dolby</div>
-                <div class="meta" id="label-dolby-sub">
-                  معايرة عربية للمساعد: وضوح الصوت + باس خفيف + مساحة ستيريو
-                </div>
-              </div>
-              <span class="dolby-badge">DOLBY</span>
+        .dolby-actions .btn {
+            padding: 6px 12px;
+            font-size: 0.85rem;
+        }
+
+        /* ---- Settings ---- */
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .setting-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .setting-card .label {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .setting-card .value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .setting-card .meta {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* ---- Toast ---- */
+        #toast {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 1000;
+            background: var(--text-primary);
+            color: #fff;
+            padding: 12px 20px;
+            border-radius: 10px;
+            box-shadow: var(--shadow-lg);
+            display: none;
+            font-size: 0.9rem;
+        }
+
+        body[dir="ltr"] #toast {
+            right: auto;
+            left: 24px;
+        }
+
+        #toast.show { display: block; }
+
+        /* ---- Mobile ---- */
+        @media (max-width: 768px) {
+            .app { flex-direction: column; }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: static;
+                box-shadow: none;
+                border-bottom: 1px solid var(--border);
+            }
+            .main {
+                margin-right: 0;
+                height: auto;
+            }
+            header { padding: 16px 20px; }
+            .pages { padding: 16px 20px; }
+            .input-row { flex-direction: column; align-items: stretch; }
+            .voice-btn { width: 100%; }
+            .verify-group { flex-direction: column; align-items: stretch; }
+            .verify-group input[type="text"] { width: 100%; }
+        }
+
+        /* ---- Utilities ---- */
+        .hidden { display: none !important; }
+        .text-center { text-align: center; }
+        .mt-4 { margin-top: 16px; }
+        .mb-4 { margin-bottom: 16px; }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">🤖</div>
+                <h2>المساعد المؤسسي</h2>
             </div>
-            <div class="dolby-grid">
-              <div class="dolby-group">
-                <h4 id="label-dolby-preset">إعداد Dolby الأساسي</h4>
-                <div class="dolby-row">
-                  <label id="label-dolby-mode">الوضع</label>
-                  <span></span>
-                </div>
-                <div class="dolby-row">
-                  <select id="dolby-preset" aria-label="Dolby preset">
-                    <option value="voice">وضوح الصوت (المساعد)</option>
-                    <option value="auto">Auto — متوازن</option>
-                    <option value="cinema">Cinema — سينمائي</option>
-                    <option value="night">Night — الوضع الليلي</option>
-                    <option value="music">Music — موسيقى</option>
-                    <option value="flat">Flat — قياسي</option>
-                    <option value="custom">Custom — مخصص</option>
-                  </select>
-                  <span></span>
-                </div>
-                <label class="check-row">
-                  <input type="checkbox" id="dolby-enabled" checked />
-                  <span id="label-dolby-enabled">تفعيل معالجة Dolby</span>
-                </label>
-                <label class="check-row">
-                  <input type="checkbox" id="dolby-spatial" checked />
-                  <span id="label-dolby-spatial"
-                    >المحيط المكاني (Virtual Surround)</span
-                  >
-                </label>
-                <label class="check-row">
-                  <input type="checkbox" id="dolby-loudness" checked />
-                  <span id="label-dolby-loudness"
-                    >توحيد مستوى الصوت (Loudness)</span
-                  >
-                </label>
-                <div class="dolby-actions">
-                  <button class="btn" id="dolby-test-btn">
-                    <span id="dolby-test-text">معاينة Dolby</span>
-                  </button>
-                  <button class="btn secondary" id="dolby-stop-btn">
-                    <span id="dolby-stop-text">إيقاف</span>
-                  </button>
-                </div>
-              </div>
-              <div class="dolby-group">
-                <h4 id="label-dolby-eq">المعادل (EQ)</h4>
-                <div class="dolby-row" dir="ltr">
-                  <input
-                    type="range"
-                    id="dolby-volume"
-                    min="0"
-                    max="100"
-                    step="1"
-                    value="80"
-                  />
-                  <output id="dolby-volume-val" for="dolby-volume">80</output>
-                </div>
-                <div class="dolby-row" dir="ltr">
-                  <input
-                    type="range"
-                    id="dolby-bass"
-                    min="-12"
-                    max="12"
-                    step="1"
-                    value="3"
-                  />
-                  <output id="dolby-bass-val" for="dolby-bass">+3</output>
-                </div>
-                <div class="dolby-row" dir="ltr">
-                  <input
-                    type="range"
-                    id="dolby-dialogue"
-                    min="-12"
-                    max="12"
-                    step="1"
-                    value="4"
-                  />
-                  <output id="dolby-dialogue-val" for="dolby-dialogue"
-                    >+4</output
-                  >
-                </div>
-                <div class="dolby-row" dir="ltr">
-                  <input
-                    type="range"
-                    id="dolby-treble"
-                    min="-12"
-                    max="12"
-                    step="1"
-                    value="2"
-                  />
-                  <output id="dolby-treble-val" for="dolby-treble">+2</output>
-                </div>
-                <div class="dolby-row" dir="ltr">
-                  <input
-                    type="range"
-                    id="dolby-width"
-                    min="0"
-                    max="100"
-                    step="1"
-                    value="45"
-                  />
-                  <output id="dolby-width-val" for="dolby-width">45</output>
-                </div>
-              </div>
-              <div class="dolby-group">
-                <h4 id="label-dolby-mic">الميكروفون (Dolby Capture)</h4>
-                <label class="check-row">
-                  <input type="checkbox" id="mic-noise" checked />
-                  <span id="label-mic-noise">إلغاء الضوضاء</span>
-                </label>
-                <label class="check-row">
-                  <input type="checkbox" id="mic-echo" checked />
-                  <span id="label-mic-echo">إلغاء الصدى</span>
-                </label>
-                <label class="check-row">
-                  <input type="checkbox" id="mic-gain" checked />
-                  <span id="label-mic-gain">ضبط تلقائي للكسب</span>
-                </label>
-                <label class="check-row">
-                  <input type="checkbox" id="mic-stereo" checked />
-                  <span id="label-mic-stereo">التقاط ستيريو</span>
-                </label>
-                <div class="dolby-row">
-                  <label id="label-mic-rate">معدل العينة</label>
-                  <span></span>
-                </div>
-                <div class="dolby-row">
-                  <select id="mic-rate">
-                    <option value="48000">48 kHz — Dolby Studio</option>
-                    <option value="44100">44.1 kHz — CD</option>
-                    <option value="16000">16 kHz — STT خفيف</option>
-                  </select>
-                  <span></span>
-                </div>
-              </div>
+            <nav>
+                <a href="#" onclick="showPage('chat')" class="nav-item active" id="nav-chat"
+                   >💬 <span id="nav-chat-text">المحادثة</span></a>
+                <a href="#" onclick="showPage('voice')" class="nav-item" id="nav-voice"
+                   >🎤 <span id="nav-voice-text">التحكم الصوتي</span></a>
+                <a href="#" onclick="showPage('agents')" class="nav-item" id="nav-agents"
+                   >🤖 <span id="nav-agents-text">الوكلاء</span></a>
+                <a href="#" onclick="showPage('knowledge')" class="nav-item" id="nav-knowledge"
+                   >📚 <span id="nav-knowledge-text">قاعدة المعرفة</span></a>
+                <a href="#" onclick="showPage('memory')" class="nav-item" id="nav-memory"
+                   >🧠 <span id="nav-memory-text">الذاكرة</span></a>
+                <a href="#" onclick="showPage('workflows')" class="nav-item" id="nav-workflows"
+                   >⚙️ <span id="nav-workflows-text">سير العمل</span></a>
+                <a href="#" onclick="showPage('settings')" class="nav-item" id="nav-settings"
+                   >⚙️ <span id="nav-settings-text">الإعدادات</span></a>
+                <a href="#" onclick="showPage('totp')" class="nav-item" id="nav-totp"
+                   >🔐 <span id="nav-totp-text">المصادقة الثنائية</span></a>
+            </nav>
+            <div class="theme-toggle">
+                <span id="theme-text">الوضع الداكن</span>
+                <button class="theme-btn" id="theme-btn" aria-label="تبديل الوضع"></button>
             </div>
-          </div>
+        </aside>
+
+        <!-- Main -->
+        <div class="main">
+            <header>
+                <div class="header-left">
+                    <div>
+                        <div class="page-title" id="page-title"></div>
+                        <div class="page-subtitle" id="page-subtitle"></div>
+                    </div>
+                    <div class="lang-selector" id="lang-selector">
+                        <button class="lang-btn active" id="lang-ar" onclick="setLanguage('ar')">العربية</button>
+                        <button class="lang-btn" id="lang-en" onclick="setLanguage('en')">English</button>
+                        <button class="lang-btn" id="lang-lb" onclick="setLanguage('lb')">لَبْنَانِي</button>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <button class="btn btn-secondary" id="api-key-btn" onclick="showApiKeyModal()">
+                        🔑 API Key
+                    </button>
+                    <button class="btn btn-secondary" onclick="location.reload()">
+                        🔄 Refresh
+                    </button>
+                </div>
+            </header>
+
+            <div class="pages">
+                <!-- Chat Page -->
+                <section id="page-chat" class="page active">
+                    <div class="page-header">
+                        <h3>المحادثة الذكية</h3>
+                        <p>أرسل نصاً أو استخدم الميكروفون للتحدث مع المساعد</p>
+                    </div>
+                    <div class="card">
+                        <div id="chat-area"></div>
+                        <div id="chat-error" class="error-msg"></div>
+                        <div class="input-row mt-4">
+                            <input type="text" id="chat-input" placeholder="اكتب رسالتك..." />
+                            <button class="voice-btn" id="voice-btn" title="اضغط للتحدث">🎤</button>
+                            <button class="btn btn-primary" id="send-btn">إرسال</button>
+                        </div>
+                        <div class="voice-support" id="voice-support-text">
+                            الصوت: اضغط للتحدث • كشف النشاط الصوتي • كتم الضوضاء • كشف الصمت
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Voice Page -->
+                <section id="page-voice" class="page">
+                    <div class="page-header">
+                        <h3>التحكم الصوتي</h3>
+                        <p>تحويل الكلام إلى نص والرد بصوت ذكي مع دعم دولبي</p>
+                    </div>
+                    <div class="grid">
+                        <div class="card dolby-panel">
+                            <div class="card-header">
+                                <h4>🔊 حالة الصوت</h4>
+                                <span class="badge" id="voice-status-badge">فحص...</span>
+                            </div>
+                            <div style="display:flex; gap:20px; flex-wrap:wrap">
+                                <div class="setting-card">
+                                    <div class="label">الميكروفون (STT)</div>
+                                    <div class="value" id="stt-status">—</div>
+                                    <div class="meta" id="stt-model"></div>
+                                </div>
+                                <div class="setting-card">
+                                    <div class="label">السماعة (TTS)</div>
+                                    <div class="value" id="tts-status">—</div>
+                                    <div class="meta" id="tts-model"></div>
+                                </div>
+                            </div>
+                            <button class="btn btn-primary mt-4" onclick="checkVoiceHealth()">فحص حالة الصوت</button>
+                            <div id="voice-health-result" class="mt-4"></div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <h4>🎤 اختبار الصوت المباشر</h4>
+                            </div>
+                            <div style="text-align:center; padding:40px">
+                                <div id="voice-visualizer" style="
+                                    width:100px; height:100px; border:2px dashed var(--border);
+                                    border-radius:50%; margin:0 auto 20px; display:flex;
+                                    align-items:center; justify-content:center; color:var(--text-muted);
+                                ">
+                                    انقر للتحدث
+                                </div>
+                                <button class="voice-btn" id="live-voice-btn" style="margin:0 auto; display:block">🎤</button>
+                                <div id="live-voice-text" class="mt-4" style="font-size:0.9rem; color:var(--text-muted)">اضغط للتحدث</div>
+                                <div id="live-result" class="mt-4" style="min-height:60px"></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Agents Page -->
+                <section id="page-agents" class="page">
+                    <div class="page-header">
+                        <h3>الوكلاء المتخصصون</h3>
+                        <p>ستة وكلاء ذكيين مع تعليمات نظامية ثنائية اللغة</p>
+                    </div>
+                    <div class="grid" id="agents-table">
+                        <!-- Populated by JS -->
+                    </div>
+                </section>
+
+                <!-- Knowledge Page -->
+                <section id="page-knowledge" class="page">
+                    <div class="page-header">
+                        <h3>البحث في قاعدة المعرفة</h3>
+                        <p>بحث دلالي وهجين مع دعم البحث عبر اللغات والاقتباسات</p>
+                    </div>
+                    <div class="card">
+                        <div style="margin-bottom:16px">
+                            <input type="text" id="kb-query" placeholder="أدخل استعلام البحث..." />
+                            <button class="btn btn-primary" onclick="searchKnowledge()">بحث</button>
+                            <span id="kb-cross-lang-text" style="font-size:0.85rem; color:var(--text-muted); margin-right:8px">(يدعم البحث عبر اللغات)</span>
+                        </div>
+                        <div id="kb-results"></div>
+                    </div>
+                </section>
+
+                <!-- Memory Page -->
+                <section id="page-memory" class="page">
+                    <div class="page-header">
+                        <h3>ذاكرة المحادثة</h3>
+                        <p>استرجاع الذكريات طويلة المدى للمحادثات السابقة</p>
+                    </div>
+                    <div id="memory-list" class="card"></div>
+                </section>
+
+                <!-- Workflows Page -->
+                <section id="page-workflows" class="page">
+                    <div class="page-header">
+                        <h3>سير العمل (n8n)</h3>
+                        <p>تنفيذ سير عمل خارجي بموافقة بشرية متعددة المستويات</p>
+                    </div>
+                    <div class="card">
+                        <p id="workflows-approval-note" style="color:var(--text-muted); font-size:0.9rem; margin-bottom:12px">
+                            الإجراءات الخارجية تتطلب موافقة بشرية قبل التنفيذ.
+                        </p>
+                        <p id="workflows-status-line" style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:12px"></p>
+                        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center">
+                            <input type="text" id="workflow-id" placeholder="معرف سير العمل" style="padding:12px 16px; border:1px solid var(--border); border-radius:12px; min-width:200px; background:var(--bg-body); color:var(--text-primary)" />
+                            <button class="btn btn-secondary" id="workflow-run-btn">تنفيذ (يتطلب موافقة)</button>
+                            <a class="btn btn-secondary" id="workflow-open-btn" href="http://127.0.0.1:5679/" target="_blank" rel="noopener">فتح محرر n8n</a>
+                        </div>
+                        <div id="workflow-result" class="mt-4"></div>
+                    </div>
+                </section>
+
+                <!-- Settings Page -->
+                <section id="page-settings" class="page">
+                    <div class="page-header">
+                        <h3>الإعدادات</h3>
+                        <p>إدارة نماذج اللغة، محركات الصوت، وتخصيص 경험 المستخدم</p>
+                    </div>
+                    <div class="settings-grid">
+                        <div class="setting-card">
+                            <div class="label">نموذج البرمجة</div>
+                            <div class="value" id="setting-coding-model">gemma4:e2b</div>
+                            <div class="meta">مهام التطوير والكود</div>
+                        </div>
+                        <div class="setting-card">
+                            <div class="label">نموذج الاستدلال</div>
+                            <div class="value" id="setting-reasoning-model">deepseek-r1:14b</div>
+                            <div class="meta">التحليل والقرارات المعقدة</div>
+                        </div>
+                        <div class="setting-card">
+                            <div class="label">نموذج عام</div>
+                            <div class="value" id="setting-general-model">gemma4:e2b</div>
+                            <div class="meta">المحادثة generales</div>
+                        </div>
+                        <div class="setting-card dolby-panel">
+                            <div class="dolby-head">
+                                <div>
+                                    <div class="label">صوت Dolby</div>
+                                    <div class="meta">معايرة عربية للمساعد: وضوح الصوت + باس خفيف + مساحة ستيريو</div>
+                                </div>
+                                <span class="dolby-badge">DOLBY</span>
+                            </div>
+                            <div class="dolby-grid">
+                                <div class="dolby-group">
+                                    <h4>إعداد Dolby الأساسي</h4>
+                                    <div class="dolby-row">
+                                        <label>الوضع</label>
+                                        <span></div>
+                                    <div class="dolby-row">
+                                        <select id="dolby-preset">
+                                            <option value="voice">وضوح الصوت (المساعد)</option>
+                                            <option value="auto">Auto — متوازن</option>
+                                            <option value="cinema">Cinema — سينمائي</option>
+                                            <option value="night">Night — الوضع الليلي</option>
+                                            <option value="music">Music — موسيقى</option>
+                                            <option value="flat">Flat — قياسي</option>
+                                        </select>
+                                        <span></span>
+                                    </div>
+                                    <label class="check-row"><input type="checkbox" id="dolby-enabled" checked /><span>تفعيل معالجة Dolby</span></label>
+                                    <label class="check-row"><input type="checkbox" id="dolby-spatial" checked /><span>المحيط المكاني (Virtual Surround)</span></label>
+                                    <label class="check-row"><input type="checkbox" id="dolby-loudness" checked /><span>توحيد مستوى الصوت (Loudness)</span></label>
+                                    <div class="dolby-actions">
+                                        <button class="btn" id="dolby-test-btn">معاينة Dolby</button>
+                                        <button class="btn btn-secondary" id="dolby-stop-btn">إيقاف</button>
+                                    </div>
+                                </div>
+                                <div class="dolby-group">
+                                    <h4>المعادل (EQ)</h4>
+                                    <div class="dolby-row" dir="ltr">
+                                        <input type="range" id="dolby-volume" min="0" max="100" step="1" value="80" />
+                                        <output id="dolby-volume-val" for="dolby-volume">80</output>
+                                    </div>
+                                    <div class="dolby-row" dir="ltr">
+                                        <input type="range" id="dolby-bass" min="-12" max="12" step="1" value="3" />
+                                        <output id="dolby-bass-val" for="dolby-bass">+3</output>
+                                    </div>
+                                    <div class="dolby-row" dir="ltr">
+                                        <input type="range" id="dolby-dialogue" min="-12" max="12" step="1" value="4" />
+                                        <output id="dolby-dialogue-val" for="dolby-dialogue">+4</output>
+                                    </div>
+                                    <div class="dolby-row" dir="ltr">
+                                        <input type="range" id="dolby-treble" min="-12" max="12" step="1" value="2" />
+                                        <output id="dolby-treble-val" for="dolby-treble">+2</output>
+                                    </div>
+                                    <div class="dolby-row" dir="ltr">
+                                        <input type="range" id="dolby-width" min="0" max="100" step="1" value="45" />
+                                        <output id="dolby-width-val" for="dolby-width">45</output>
+                                    </div>
+                                </div>
+                                <div class="dolby-group">
+                                    <h4>الميكروفون (Dolby Capture)</h4>
+                                    <label class="check-row"><input type="checkbox" id="mic-noise" checked /><span>إلغاء الضوضاء</span></label>
+                                    <label class="check-row"><input type="checkbox" id="mic-echo" checked /><span>إلغاء الصدى</span></label>
+                                    <label class="check-row"><input type="checkbox" id="mic-gain" checked /><span>ضبط تلقائي للكسب</span></label>
+                                    <label class="check-row"><input type="checkbox" id="mic-stereo" checked /><span>التقاط ستيريو</span></label>
+                                    <div class="dolby-row">
+                                        <label>معدل العينة</label>
+                                        <span></span>
+                                    </div>
+                                    <div class="dolby-row">
+                                        <select id="mic-rate">
+                                            <option value="48000">48 kHz — Dolby Studio</option>
+                                            <option value="44100">44.1 kHz — CD</option>
+                                            <option value="16000">16 kHz — STT خفيف</option>
+                                        </select>
+                                        <span></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TOTP Page -->
+                <section id="page-totp" class="page">
+                    <div class="page-header">
+                        <h3>المصادقة الثنائية (TOTP)</h3>
+                        <p>تأمين طلبات الموافقة ذات المستوى الحرج (المستوى D) برمز ثانية</p>
+                    </div>
+                    <div class="totp-card">
+                        <h4>تفعيل المصادقة الثنائية</h4>
+                        <p>استخدم تطبيق مصادقة (مثل Google Authenticator أو Authy) لمسح رمز QR أدناه، ثم أدخل رمز المكون من 6 أرقام لتأكيد التسجيل.</p>
+                        <div class="secret-box">
+                            <input type="text" id="totp-secret" readonly placeholder="السر السري..." />
+                            <button class="copy-btn" id="totp-copy-btn">نسخ</button>
+                        </div>
+                        <div class="secret-box">
+                            <input type="text" id="totp-otpauth" readonly placeholder="رابط otpauth://..." />
+                            <button class="copy-btn" id="totp-copy-otpauth-btn">نسخ الرابط</button>
+                        </div>
+                        <button class="btn btn-primary" id="totp-enroll-btn">تسجيل جديد في TOTP</button>
+                        <div id="totp-enroll-result" class="result-box"></div>
+                    </div>
+                    <div class="verify-card">
+                        <h4>تأكيد التفعيل برمز التحقق</h4>
+                        <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:12px">
+                            أدخل الرمز المكون من 6 أرقام من تطبيق المصادقة لتأكيد أن التفعيل يعمل بشكل صحيح.
+                        </p>
+                        <div class="verify-group">
+                            <input type="text" id="totp-code" maxlength="6" placeholder="000000" />
+                            <button class="btn btn-primary" id="totp-verify-btn">تحقق وتفعيل</button>
+                        </div>
+                        <div id="totp-verify-result" class="result-box"></div>
+                        <p id="totp-note" style="color:var(--text-muted); font-size:0.85rem; margin-top:10px">
+                            بعد التفعيل، سيُطلب رمز TOTP عند اعتماد طلبات الموافقة ذات المستوى الحرج (المستوى D).
+                        </p>
+                    </div>
+                </section>
+            </div>
         </div>
-      </section>
     </div>
 
-    <!-- TOTP Page (two-factor enrollment & verification) -->
-    <section id="page-totp" class="card hidden">
-      <h3 id="totp-title">المصادقة الثنائية (TOTP)</h3>
-      <p id="totp-desc"
-        style="color:#6b7280; font-size:0.9rem; margin-bottom:16px"
-      >
-        استخدم تطبيق مصادقة (مثل Google Authenticator أو Authy) لمسح رمز QR
-        أدناه، ثم أدخل رمز المكون من 6 أرقام لتفعيل المصادقة الثنائية.
-      </p>
+    <div id="toast"></div>
 
-      <!-- Enrollment card -->
-      <div id="totp-enroll-card" class="card" style="margin-bottom:16px; padding:16px">
-        <h4 id="totp-enroll-heading">تفعيل المصادقة الثنائية</h4>
-        <div style="margin-bottom:12px">
-          <label id="totp-secret-label">السر السري (يُعرض مرة واحدة فقط):</label>
+    <div id="api-key-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:2000; backdrop-filter: blur(4px)">
+        <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:var(--bg-card); border:1px solid var(--border); border-radius:16px; padding:32px; min-width:400px; box-shadow:var(--shadow-lg)">
+            <h3 style="margin-bottom:16px">إدخال مفتاح API</h3>
+            <input type="password" id="api-key-input" placeholder="أدخل مفتاح API" style="width:100%; padding:12px 16px; border:1px solid var(--border); border-radius:10px; margin-bottom:16px; background:var(--bg-body); color:var(--text-primary)" />
+            <div style="display:flex; gap:8px">
+                <button class="btn btn-primary" onclick="saveApiKey()">حفظ</button>
+                <button class="btn btn-secondary" onclick="hideApiKeyModal()">إلغاء</button>
+            </div>
         </div>
-        <div style="display:flex; gap:8px; margin-bottom:12px">
-          <input
-            type="text"
-            id="totp-secret"
-            readonly
-            style="flex:1; font-family:monospace; font-size:0.9rem; background:#f3f4f6; border:1px solid #d1d5db; border-radius:6px; padding:8px 10px; word-break:break-all"
-          />
-          <button class="btn secondary" id="totp-copy-btn">
-            <span id="totp-copy-text">نسخ</span>
-          </button>
-        </div>
-        <div style="margin-bottom:12px">
-          <label id="totp-otpauth-label">رابط otpauth:// (للتطبيق):</label>
-        </div>
-        <div style="display:flex; gap:8px; margin-bottom:12px">
-          <input
-            type="text"
-            id="totp-otpauth"
-            readonly
-            style="flex:1; font-family:monospace; font-size:0.85rem; background:#f3f4f6; border:1px solid #d1d5db; border-radius:6px; padding:8px 10px; word-break:break-all"
-          />
-          <button class="btn secondary" id="totp-copy-otpauth-btn">
-            <span id="totp-copy-otpauth-text">نسخ</span>
-          </button>
-        </div>
-        <button class="btn" id="totp-enroll-btn">
-          <span id="totp-enroll-text">تسجيل جديد في TOTP</span>
-        </button>
-        <div id="totp-enroll-result" style="margin-top:10px; min-height:20px"></div>
-      </div>
+    </div>
 
-      <!-- Verification card -->
-      <div id="totp-verify-card" class="card" style="padding:16px">
-        <h4 id="totp-verify-heading">تأكيد التفعيل برمز التحقق</h4>
-        <p id="totp-verify-desc"
-          style="color:#6b7280; font-size:0.85rem; margin-bottom:12px"
-        >
-          أدخل الرمز المكون من 6 أرقام من تطبيق المصادقة لتأكيد أن التفعيل
-          يعمل بشكل صحيح.
-        </p>
-        <div style="display:flex; gap:8px; margin-bottom:12px; align-items:center">
-          <input
-            type="text"
-            id="totp-code"
-            maxlength="6"
-            placeholder="000000"
-            style="width:120px; font-family:monospace; font-size:1.1rem; text-align:center; padding:8px 10px; border:1px solid #d1d5db; border-radius:6px; letter-spacing:4px"
-          />
-          <button class="btn" id="totp-verify-btn">
-            <span id="totp-verify-text">تحقق وتفعيل</span>
-          </button>
-        </div>
-        <div id="totp-verify-result" style="margin-top:10px; min-height:20px"></div>
-        <p id="totp-note"
-          style="color:#6b7280; font-size:0.85rem; margin-top:10px"
-        >
-          بعد التفعيل، سيُطلب رمز TOTP عند اعتماد طلبات الموافقة ذات المستوى
-          الحرج (المستوى D).
-        </p>
-      </div>
-    </section>
-  </div>
+    <script>
+        const API_BASE = window.location.origin;
+        let currentConversationId = null;
+        let currentLanguage = "ar";
+        let isVoiceRecording = false;
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let dolbyCtx = null;
+        let dolbyNodes = null;
+        let dolbySource = null;
+        let dolbyCurrentAudio = null;
 
-  <script>
-      const API_BASE = window.location.origin;
-      let currentConversationId = null;
-      let currentLanguage = "ar"; // 'ar', 'en', or 'auto'
-      let isVoiceRecording = false;
-      let mediaRecorder = null;
-      let audioChunks = [];
-
-      // Bilingual labels dictionary
-      const DOLBY_STORAGE_KEY = "dolby_audio_settings_v2";
-      const DOLBY_PRESETS = {
-        voice: {
-          volume: 80,
-          bass: 3,
-          dialogue: 6,
-          treble: 3,
-          width: 30,
-          spatial: true,
-          loudness: true,
-          compressor: {
-            threshold: -18,
-            knee: 22,
-            ratio: 3.5,
-            attack: 0.004,
-            release: 0.24,
-          },
-        },
-        auto: {
-          volume: 80,
-          bass: 3,
-          dialogue: 4,
-          treble: 2,
-          width: 45,
-          spatial: true,
-          loudness: true,
-          compressor: {
-            threshold: -14,
-            knee: 18,
-            ratio: 2.5,
-            attack: 0.003,
-            release: 0.22,
-          },
-        },
-        cinema: {
-          volume: 85,
-          bass: 6,
-          dialogue: 2,
-          treble: 3,
-          width: 75,
-          spatial: true,
-          loudness: true,
-          compressor: {
-            threshold: -12,
-            knee: 14,
-            ratio: 2,
-            attack: 0.004,
-            release: 0.3,
-          },
-        },
-        night: {
-          volume: 55,
-          bass: 0,
-          dialogue: 6,
-          treble: 1,
-          width: 20,
-          spatial: false,
-          loudness: true,
-          compressor: {
-            threshold: -20,
-            knee: 28,
-            ratio: 4.5,
-            attack: 0.002,
-            release: 0.18,
-          },
-        },
-        music: {
-          volume: 85,
-          bass: 5,
-          dialogue: -2,
-          treble: 4,
-          width: 80,
-          spatial: true,
-          loudness: true,
-          compressor: {
-            threshold: -10,
-            knee: 12,
-            ratio: 1.8,
-            attack: 0.005,
-            release: 0.32,
-          },
-        },
-        flat: {
-          volume: 80,
-          bass: 0,
-          dialogue: 0,
-          treble: 0,
-          width: 0,
-          spatial: false,
-          loudness: false,
-          compressor: {
-            threshold: 0,
-            knee: 0,
-            ratio: 1,
-            attack: 0.003,
-            release: 0.25,
-          },
-        },
-      };
-      const DEFAULT_DOLBY = {
-        preset: "voice",
-        enabled: true,
-        ...DOLBY_PRESETS.voice,
-        mic: {
-          noise: false,
-          echo: true,
-          gain: true,
-          stereo: true,
-          rate: 48000,
-        },
-      };
-      function loadDolbySettings() {
-        try {
-          const raw = localStorage.getItem(DOLBY_STORAGE_KEY);
-          if (!raw) return { ...DEFAULT_DOLBY, mic: { ...DEFAULT_DOLBY.mic } };
-          const saved = JSON.parse(raw);
-          return {
-            ...DEFAULT_DOLBY,
-            ...saved,
-            mic: { ...DEFAULT_DOLBY.mic, ...(saved.mic || {}) },
-            compressor: {
-              ...DOLBY_PRESETS.voice.compressor,
-              ...(saved.compressor || {}),
-            },
-          };
-        } catch {
-          return { ...DEFAULT_DOLBY, mic: { ...DEFAULT_DOLBY.mic } };
-        }
-      }
-      let dolbySettings = loadDolbySettings();
-      let dolbyCtx = null;
-      let dolbyNodes = null;
-      let dolbySource = null;
-      let dolbyCurrentAudio = null;
-      function saveDolbySettings() {
-        try {
-          localStorage.setItem(
-            DOLBY_STORAGE_KEY,
-            JSON.stringify(dolbySettings),
-          );
-        } catch {}
-      }
-      function getAudioContext() {
-        const AC = window.AudioContext || window.webkitAudioContext;
-        if (!AC) return null;
-        if (!dolbyCtx) dolbyCtx = new AC();
-        if (dolbyCtx.state === "suspended") dolbyCtx.resume().catch(() => {});
-        return dolbyCtx;
-      }
-      function base64ToArrayBuffer(b64) {
-        const bin = atob(b64.replace(/\s/g, ""));
-        const bytes = new Uint8Array(bin.length);
-        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-        return bytes.buffer;
-      }
-      function buildDolbyChain(ctx) {
-        if (dolbyNodes) {
-          try {
-            dolbyNodes.bass.disconnect();
-          } catch {}
-          try {
-            dolbyNodes.dialogue.disconnect();
-          } catch {}
-          try {
-            dolbyNodes.treble.disconnect();
-          } catch {}
-          try {
-            dolbyNodes.compressor.disconnect();
-          } catch {}
-          try {
-            dolbyNodes.master.disconnect();
-          } catch {}
-          try {
-            dolbyNodes.splitter.disconnect();
-          } catch {}
-          try {
-            dolbyNodes.merger.disconnect();
-          } catch {}
-          try {
-            dolbyNodes.delay.disconnect();
-          } catch {}
-          try {
-            dolbyNodes.wet.disconnect();
-          } catch {}
-          try {
-            dolbyNodes.dry.disconnect();
-          } catch {}
-        }
-        const highpass = ctx.createBiquadFilter();
-        highpass.type = "highpass";
-        highpass.frequency.value = 60;
-        highpass.Q.value = 0.7;
-
-        const bass = ctx.createBiquadFilter();
-        bass.type = "lowshelf";
-        bass.frequency.value = 160;
-        bass.gain.value = dolbySettings.enabled ? dolbySettings.bass : 0;
-
-        const dialogue = ctx.createBiquadFilter();
-        dialogue.type = "peaking";
-        dialogue.frequency.value = 2400;
-        dialogue.Q.value = 0.9;
-        dialogue.gain.value = dolbySettings.enabled
-          ? dolbySettings.dialogue
-          : 0;
-
-        const treble = ctx.createBiquadFilter();
-        treble.type = "highshelf";
-        treble.frequency.value = 8000;
-        treble.gain.value = dolbySettings.enabled ? dolbySettings.treble : 0;
-
-        const c = dolbySettings.compressor || DOLBY_PRESETS.voice.compressor;
-        const compressor = ctx.createDynamicsCompressor();
-        compressor.threshold.value =
-          dolbySettings.enabled && dolbySettings.loudness ? c.threshold : 0;
-        compressor.knee.value = c.knee;
-        compressor.ratio.value =
-          dolbySettings.enabled && dolbySettings.loudness ? c.ratio : 1;
-        compressor.attack.value = c.attack;
-        compressor.release.value = c.release;
-
-        const master = ctx.createGain();
-        master.gain.value = (dolbySettings.volume ?? 80) / 100;
-
-        const splitter = ctx.createChannelSplitter(2);
-        const merger = ctx.createChannelMerger(2);
-        const delay = ctx.createDelay(0.05);
-        const wet = ctx.createGain();
-        const dry = ctx.createGain();
-        const widthAmt = (dolbySettings.width ?? 45) / 100;
-        delay.delayTime.value = 0.008 + widthAmt * 0.012;
-        wet.gain.value =
-          dolbySettings.enabled && dolbySettings.spatial ? 0.35 * widthAmt : 0;
-        dry.gain.value = 1;
-
-        dolbyNodes = {
-          highpass,
-          bass,
-          dialogue,
-          treble,
-          compressor,
-          master,
-          splitter,
-          merger,
-          delay,
-          wet,
-          dry,
+        // Dolby settings
+        const DOLBY_STORAGE_KEY = "dolby_audio_settings_v2";
+        const DOLBY_PRESETS = {
+            voice: { volume: 80, bass: 3, dialogue: 6, treble: 3, width: 30, spatial: true, loudness: true, compressor: { threshold: -18, knee: 22, ratio: 3.5, attack: 0.004, release: 0.24 } },
+            auto: { volume: 80, bass: 3, dialogue: 4, treble: 2, width: 45, spatial: true, loudness: true, compressor: { threshold: -14, knee: 18, ratio: 2.5, attack: 0.003, release: 0.22 } },
+            cinema: { volume: 85, bass: 6, dialogue: 2, treble: 3, width: 75, spatial: true, loudness: true, compressor: { threshold: -12, knee: 14, ratio: 2, attack: 0.004, release: 0.3 } },
+            night: { volume: 55, bass: 0, dialogue: 6, treble: 1, width: 20, spatial: false, loudness: true, compressor: { threshold: -20, knee: 28, ratio: 4.5, attack: 0.002, release: 0.18 } },
+            music: { volume: 85, bass: 5, dialogue: -2, treble: 4, width: 80, spatial: true, loudness: true, compressor: { threshold: -10, knee: 12, ratio: 1.8, attack: 0.005, release: 0.32 } },
+            flat: { volume: 80, bass: 0, dialogue: 0, treble: 0, width: 0, spatial: false, loudness: false, compressor: { threshold: 0, knee: 0, ratio: 1, attack: 0.003, release: 0.25 } },
         };
-        // Chain: highpass -> bass -> dialogue -> treble -> compressor
-        // Spatial widening is applied inside play path via splitter->(dry + delayed wet)->merger
-        return dolbyNodes;
-      }
-      function applyDolbyPreset(name) {
-        const base = DOLBY_PRESETS[name];
-        if (!base) return;
-        dolbySettings.preset = name;
-        Object.assign(dolbySettings, {
-          volume: base.volume,
-          bass: base.bass,
-          dialogue: base.dialogue,
-          treble: base.treble,
-          width: base.width,
-          spatial: base.spatial,
-          loudness: base.loudness,
-          compressor: { ...base.compressor },
-        });
-        saveDolbySettings();
-        syncDolbyUI();
-      }
-      function syncDolbyUI() {
-        const byId = (id) => document.getElementById(id);
-        if (!byId("dolby-preset")) return;
-        byId("dolby-preset").value = dolbySettings.preset || "voice";
-        byId("dolby-enabled").checked = !!dolbySettings.enabled;
-        byId("dolby-spatial").checked = !!dolbySettings.spatial;
-        byId("dolby-loudness").checked = !!dolbySettings.loudness;
-        byId("dolby-volume").value = dolbySettings.volume;
-        byId("dolby-bass").value = dolbySettings.bass;
-        byId("dolby-dialogue").value = dolbySettings.dialogue;
-        byId("dolby-treble").value = dolbySettings.treble;
-        byId("dolby-width").value = dolbySettings.width;
-        byId("dolby-volume-val").textContent = dolbySettings.volume;
-        byId("dolby-bass-val").textContent =
-          (dolbySettings.bass >= 0 ? "+" : "") + dolbySettings.bass;
-        byId("dolby-dialogue-val").textContent =
-          (dolbySettings.dialogue >= 0 ? "+" : "") + dolbySettings.dialogue;
-        byId("dolby-treble-val").textContent =
-          (dolbySettings.treble >= 0 ? "+" : "") + dolbySettings.treble;
-        byId("dolby-width-val").textContent = dolbySettings.width;
-        byId("mic-noise").checked = !!dolbySettings.mic.noise;
-        byId("mic-echo").checked = !!dolbySettings.mic.echo;
-        byId("mic-gain").checked = !!dolbySettings.mic.gain;
-        byId("mic-stereo").checked = !!dolbySettings.mic.stereo;
-        byId("mic-rate").value = String(dolbySettings.mic.rate || 48000);
-      }
+        const DEFAULT_DOLBY = { preset: "voice", enabled: true, ...DOLBY_PRESETS.voice, mic: { noise: false, echo: true, gain: true, stereo: true, rate: 48000 } };
 
-      const LABELS = {
-        ar: {
-          sidebarTitle: "المساعد المؤسسي",
-          navChat: "المحادثة",
-          navAgents: "الوكلاء",
-          navKnowledge: "قاعدة المعرفة",
-          navMemory: "الذاكرة",
-          navWorkflows: "سير العمل",
-          navSettings: "الإعدادات",
-          pageChat: "المحادثة",
-          pageAgents: "الوكلاء",
-          pageKnowledge: "قاعدة المعرفة",
-          pageMemory: "الذاكرة",
-          pageWorkflows: "سير العمل",
-          pageSettings: "الإعدادات",
-          logout: "تسجيل الخروج",
-          send: "إرسال",
-          voiceSupport:
-            "الصوت: اضغط للتحدث • كشف النشاط الصوتي • كتم الضوضاء • كشف الصمت",
-          agentsTitle: "الوكلاء المتخصصون",
-          colAgent: "الوكيل",
-          colType: "النوع",
-          colDesc: "الوصف",
-          kbTitle: "البحث في قاعدة المعرفة",
-          kbPlaceholder: "أدخل استعلام البحث...",
-          kbSearch: "بحث",
-          kbCrossLang: "يدعم البحث عبر اللغات",
-          memoryTitle: "ذاكرة المحادثة",
-          workflowsTitle: "سير العمل (n8n)",
-          workflowsNote: "الإجراءات الخارجية تتطلب موافقة بشرية قبل التنفيذ.",
-          colWorkflow: "المهمة",
-          colWfType: "النوع",
-          colWfStatus: "الحالة",
-          workflowEmail: "معالجة البريد",
-          workflowGithub: "مراقبة GitHub",
-          workflowDocs: "استيراد الوثائق",
-          workflowWeb: "البحث على الويب",
-          workflowTelegram: "تيليغرام",
-          workflowWhatsapp: "واتساب",
-          workflowNotify: "الإشعارات",
-          typeAutomation: "أتمتة",
-          typeMonitor: "مراقبة",
-          typeSearch: "بحث",
-          typeMessaging: "مراسلة",
-          typeNotifications: "إشعارات",
-          statusActive: "مُفعّل",
-          chatPlaceholder: "اكتب رسالتك...",
-          voiceTitle: "اضغط للتحدث",
-          recordingTitle: "إيقاف التسجيل",
-          you: "أنت",
-          assistant: "المساعد",
-          emptyMemory: "لا توجد رسائل محفوظة في هذه المحادثة بعد.",
-          emptyAgents: "لا توجد بيانات عن الوكلاء.",
-          loadError: "تعذّر تحميل البيانات. تأكد من تشغيل الخادم.",
-          genericError: "حدث خطأ غير متوقع.",
-          micDenied: "تعذّر الوصول إلى الميكروفون: ",
-          scoreLabel: "درجة التشابه",
-          unknown: "غير معروف",
-          ready: "جاهز",
-          notReady: "غير جاهز — نفّذ سكربت تنزيل الموديلات",
-          ttsTest: "اختبار السمّاعة",
-          ttsTestText: "مرحبًا، السمّاعة تعمل الآن.",
-          ttsTesting: "جارٍ التشغيل...",
-          settingsTitle: "الإعدادات",
-          labelCoding: "نموذج البرمجة",
-          labelReasoning: "نموذج الاستدلال",
-          labelStt: "محرك تحويل الكلام إلى نص",
-          labelTts: "محرك تحويل النص إلى كلام",
-          labelVector: "قاعدة المتجهات",
-          labelDb: "قاعدة البيانات",
-          dolbyTitle: "صوت Dolby",
-          dolbySub:
-            "معايرة عربية للمساعد: وضوح الصوت + باس خفيف + مساحة ستيريو",
-          dolbyPreset: "إعداد Dolby الأساسي",
-          dolbyMode: "الوضع",
-          dolbyEnabled: "تفعيل معالجة Dolby",
-          dolbySpatial: "المحيط المكاني (Virtual Surround)",
-          dolbyLoudness: "توحيد مستوى الصوت (Loudness)",
-          dolbyTest: "معاينة Dolby",
-          dolbyStop: "إيقاف",
-          dolbyEq: "المعادل (EQ)",
-          dolbyMic: "الميكروفون (Dolby Capture)",
-          micNoise: "إلغاء الضوضاء",
-          micEcho: "إلغاء الصدى",
-          micGain: "ضبط تلقائي للكسب",
-          micStereo: "التقاط ستيريو",
-          micRate: "معدل العينة",
-          dolbyPreviewText:
-            "مرحبًا، معاينة Dolby جاهزة. الصوت أوضح والباس متوازن.",
-          navTotp: "المصادقة الثنائية (TOTP)",
-          totpTitle: "المصادقة الثنائية (TOTP)",
-          totpDesc: "استخدم تطبيق مصادقة (مثل Google Authenticator أو Authy) لمسح رمز QR أدناه، ثم أدخل رمز المكون من 6 أرقام لتفعيل المصادقة الثنائية.",
-          totpEnrollHeading: "تفعيل المصادقة الثنائية",
-          totpSecretLabel: "السر السري (يُعرض مرة واحدة فقط):",
-          totpOtpauthLabel: "رابط otpauth:// (للتطبيق):",
-          totpCopyText: "نسخ",
-          totpCopyOtpauthText: "نسخ الرابط",
-          totpEnrollText: "تسجيل جديد في TOTP",
-          totpEnrollResultSuccess: "تم التفعيل بنجاح. امسح رمز QR أو أدخل السر السري في تطبيق المصادقة.",
-          totpEnrollResultError: "فشل التفعيل. تأكد من تسجيل الدخول وحاول مرة أخرى.",
-          totpVerifyHeading: "تأكيد التفعيل برمز التحقق",
-          totpVerifyDesc: "أدخل الرمز المكون من 6 أرقام من تطبيق المصادقة لتأكيد أن التفعيل يعمل بشكل صحيح.",
-          totpVerifyText: "تحقق وتفعيل",
-          totpVerifyResultSuccess: "تم التحقق بنجاح! المصادقة الثنائية مفعّلة الآن.",
-          totpVerifyResultError: "رمز غير صحيح أو مستخدم سابقاً. حاول مرة أخرى.",
-          totpNote: "بعد التفعيل، سيُطلب رمز TOTP عند اعتماد طلبات الموافقة ذات المستوى الحرج (المستوى D).",
-        },
-        en: {
-          sidebarTitle: "Enterprise AI Assistant",
-          navChat: "Chat",
-          navAgents: "Agents",
-          navKnowledge: "Knowledge Base",
-          navMemory: "Memory",
-          navWorkflows: "Workflows",
-          navSettings: "Settings",
-          pageChat: "Chat",
-          pageAgents: "Agents",
-          pageKnowledge: "Knowledge Base",
-          pageMemory: "Memory",
-          pageWorkflows: "Workflows",
-          pageSettings: "Settings",
-          logout: "Logout",
-          send: "Send",
-          voiceSupport:
-            "Voice: push-to-talk • VAD • noise suppression • silence detection",
-          agentsTitle: "Specialized Agents",
-          colAgent: "Agent",
-          colType: "Type",
-          colDesc: "Description",
-          kbTitle: "Knowledge Base Search",
-          kbPlaceholder: "Enter search query...",
-          kbSearch: "Search",
-          kbCrossLang: "Cross-language search supported",
-          memoryTitle: "Conversation Memory",
-          workflowsTitle: "Workflows (n8n)",
-          workflowsNote:
-            "External actions require human approval before execution.",
-          colWorkflow: "Task",
-          colWfType: "Type",
-          colWfStatus: "Status",
-          workflowEmail: "Email processing",
-          workflowGithub: "GitHub monitoring",
-          workflowDocs: "Document import",
-          workflowWeb: "Web search",
-          workflowTelegram: "Telegram",
-          workflowWhatsapp: "WhatsApp",
-          workflowNotify: "Notifications",
-          typeAutomation: "Automation",
-          typeMonitor: "Monitoring",
-          typeSearch: "Search",
-          typeMessaging: "Messaging",
-          typeNotifications: "Notifications",
-          statusActive: "Active",
-          chatPlaceholder: "Type your message...",
-          voiceTitle: "Click to talk",
-          recordingTitle: "Stop recording",
-          you: "You",
-          assistant: "Assistant",
-          emptyMemory: "No messages saved in this conversation yet.",
-          emptyAgents: "No agent data available.",
-          loadError: "Could not load data. Check that the server is running.",
-          genericError: "An unexpected error occurred.",
-          micDenied: "Cannot access the microphone: ",
-          scoreLabel: "Similarity",
-          unknown: "Unknown",
-          ready: "Ready",
-          notReady: "Not ready — run the model download script",
-          ttsTest: "Test speaker",
-          ttsTestText: "Hello, the speaker is working now.",
-          ttsTesting: "Playing...",
-          settingsTitle: "Settings",
-          labelCoding: "Coding Model",
-          labelReasoning: "Reasoning Model",
-          labelStt: "STT Engine",
-          labelTts: "TTS Engine",
-          labelVector: "Vector Store",
-          labelDb: "Database",
-          dolbyTitle: "Dolby Audio",
-          dolbySub:
-            "Arabic-tuned assistant calibration: dialogue clarity + light bass + stereo space",
-          dolbyPreset: "Dolby Preset",
-          dolbyMode: "Mode",
-          dolbyEnabled: "Enable Dolby processing",
-          dolbySpatial: "Spatial surround (Virtual Surround)",
-          dolbyLoudness: "Loudness normalization",
-          dolbyTest: "Dolby preview",
-          dolbyStop: "Stop",
-          dolbyEq: "Equalizer (EQ)",
-          dolbyMic: "Microphone (Dolby Capture)",
-          micNoise: "Noise cancellation",
-          micEcho: "Echo cancellation",
-          micGain: "Auto gain control",
-          micStereo: "Stereo capture",
-          micRate: "Sample rate",
-          dolbyPreviewText:
-            "Hello, Dolby preview is ready. Clearer voice, balanced bass.",
-          navTotp: "Two-Factor Authentication (TOTP)",
-          totpTitle: "Two-Factor Authentication (TOTP)",
-          totpDesc: "Use an authenticator app (such as Google Authenticator or Authy) to scan the QR code below, then enter the 6-digit code to enable two-factor authentication.",
-          totpEnrollHeading: "Enable Two-Factor Authentication",
-          totpSecretLabel: "Secret key (shown once only):",
-          totpOtpauthLabel: "otpauth:// link (for the app):",
-          totpCopyText: "Copy",
-          totpCopyOtpauthText: "Copy link",
-          totpEnrollText: "Register new TOTP",
-          totpEnrollResultSuccess: "Activation successful. Scan the QR code or enter the secret key in your authenticator app.",
-          totpEnrollResultError: "Activation failed. Please make sure you are logged in and try again.",
-          totpVerifyHeading: "Confirm activation with verification code",
-          totpVerifyDesc: "Enter the 6-digit code from your authenticator app to confirm activation works correctly.",
-          totpVerifyText: "Verify and Activate",
-          totpVerifyResultSuccess: "Verification successful! Two-factor authentication is now enabled.",
-          totpVerifyResultError: "Incorrect or already-used code. Please try again.",
-          totpNote: "After activation, a TOTP code will be required when approving critical-level (level D) approval requests.",
-        },
-      };
-
-      function t(key) {
-        return LABELS[currentLanguage] && LABELS[currentLanguage][key]
-          ? LABELS[currentLanguage][key]
-          : LABELS.ar[key] || key;
-      }
-
-      function setLanguage(lang) {
-        currentLanguage = lang;
-        const html = document.documentElement;
-        if (lang === "ar" || lang === "auto") {
-          html.dir = "rtl";
-          html.lang = "ar";
-        } else {
-          html.dir = "ltr";
-          html.lang = "en";
-        }
-
-        // Update active button
-        document
-          .querySelectorAll(".lang-btn")
-          .forEach((b) => b.classList.remove("active"));
-        document.getElementById("lang-" + lang).classList.add("active");
-
-        // Update all labels
-        updateLabels();
-
-        // Re-render current page
-        const activePage = document
-          .querySelector("section:not(.hidden)")
-          ?.id.replace("page-", "");
-        if (activePage) showPage(activePage);
-      }
-
-      function updateLabels() {
-        document.getElementById("sidebar-title").textContent =
-          t("sidebarTitle");
-        document.getElementById("nav-chat-text").textContent = t("navChat");
-        document.getElementById("nav-agents-text").textContent = t("navAgents");
-        document.getElementById("nav-knowledge-text").textContent =
-          t("navKnowledge");
-        document.getElementById("nav-memory-text").textContent = t("navMemory");
-        document.getElementById("nav-workflows-text").textContent =
-          t("navWorkflows");
-        document.getElementById("nav-settings-text").textContent =
-          t("navSettings");
-        document.getElementById("nav-totp-text").textContent = t("navTotp");
-        document.getElementById("logout-text").textContent = t("logout");
-        document.getElementById("send-text").textContent = t("send");
-        document.getElementById("voice-support-text").textContent =
-          t("voiceSupport");
-        document.getElementById("chat-input").placeholder =
-          t("chatPlaceholder");
-        document.getElementById("voice-btn").title = isVoiceRecording
-          ? t("recordingTitle")
-          : t("voiceTitle");
-
-        // Page titles
-        const titles = {
-          chat: t("pageChat"),
-          agents: t("pageAgents"),
-          knowledge: t("pageKnowledge"),
-          memory: t("pageMemory"),
-          workflows: t("pageWorkflows"),
-          settings: t("pageSettings"),
-        };
-        document.getElementById("page-title").textContent = titles["chat"]; // default, updated by showPage
-
-        // Agents table headers
-        document.getElementById("col-agent").textContent = t("colAgent");
-        document.getElementById("col-type").textContent = t("colType");
-        document.getElementById("col-desc").textContent = t("colDesc");
-
-        // Knowledge
-        document.getElementById("kb-title").textContent = t("kbTitle");
-        document.getElementById("kb-query").placeholder = t("kbPlaceholder");
-        document.getElementById("kb-search-text").textContent = t("kbSearch");
-
-        // Workflows
-        document.getElementById("workflows-title").textContent =
-          t("workflowsTitle");
-        document.getElementById("workflows-approval-note").textContent =
-          t("workflowsNote");
-        document.getElementById("col-workflow").textContent = t("colWorkflow");
-        document.getElementById("col-wf-type").textContent = t("colWfType");
-        document.getElementById("col-wf-status").textContent = t("colWfStatus");
-
-        // Real n8n rows are rendered by loadWorkflows() from /workflows/status.
-        const wfRunBtn = document.getElementById("workflow-run-text");
-        if (wfRunBtn) {
-          wfRunBtn.textContent =
-            currentLanguage === "en"
-              ? "Execute (approval required)"
-              : "تنفيذ (يتطلب موافقة)";
-        }
-
-        // Settings
-        document.getElementById("settings-title").textContent =
-          t("settingsTitle");
-        document.getElementById("label-coding-model").textContent =
-          t("labelCoding");
-        document.getElementById("label-reasoning-model").textContent =
-          t("labelReasoning");
-        document.getElementById("label-stt").textContent = t("labelStt");
-        document.getElementById("label-tts").textContent = t("labelTts");
-        document.getElementById("label-vector").textContent = t("labelVector");
-        document.getElementById("label-db").textContent = t("labelDb");
-        const setText = (id, key) => {
-          const el = document.getElementById(id);
-          if (el) el.textContent = t(key);
-        };
-        setText("label-dolby-title", "dolbyTitle");
-        setText("label-dolby-sub", "dolbySub");
-        setText("label-dolby-preset", "dolbyPreset");
-        setText("label-dolby-mode", "dolbyMode");
-        setText("label-dolby-enabled", "dolbyEnabled");
-        setText("label-dolby-spatial", "dolbySpatial");
-        setText("label-dolby-loudness", "dolbyLoudness");
-        setText("dolby-test-text", "dolbyTest");
-        setText("dolby-stop-text", "dolbyStop");
-        setText("label-dolby-eq", "dolbyEq");
-        setText("label-dolby-mic", "dolbyMic");
-        setText("label-mic-noise", "micNoise");
-        setText("label-mic-echo", "micEcho");
-        setText("label-mic-gain", "micGain");
-        setText("label-mic-stereo", "micStereo");
-        setText("label-mic-rate", "micRate");
-        // TOTP labels
-        setText("totp-title", "totpTitle");
-        setText("totp-desc", "totpDesc");
-        setText("totp-enroll-heading", "totpEnrollHeading");
-        setText("totp-secret-label", "totpSecretLabel");
-        setText("totp-otpauth-label", "totpOtpauthLabel");
-        setText("totp-copy-text", "totpCopyText");
-        setText("totp-copy-otpauth-text", "totpCopyOtpauthText");
-        setText("totp-enroll-text", "totpEnrollText");
-        setText("totp-verify-heading", "totpVerifyHeading");
-        setText("totp-verify-desc", "totpVerifyDesc");
-        setText("totp-verify-text", "totpVerifyText");
-        setText("totp-note", "totpNote");
-        const vt = document.getElementById("voice-support-text");
-        if (vt) {
-          vt.textContent =
-            currentLanguage === "en"
-              ? "Voice: push-to-talk • VAD • Dolby capture • silence detection"
-              : "الصوت: اضغط للتحدث • كشف النشاط الصوتي • التقاط Dolby • كشف الصمت";
-        }
-        syncDolbyUI();
-      }
-
-      const pages = [
-        "chat",
-        "agents",
-        "knowledge",
-        "memory",
-        "workflows",
-        "settings",
-        "totp",
-      ];
-      function showPage(page) {
-        pages.forEach((p) => {
-          document.getElementById("page-" + p).classList.add("hidden");
-          document.getElementById("nav-" + p).classList.remove("active");
-        });
-        document.getElementById("page-" + page).classList.remove("hidden");
-        document.getElementById("nav-" + page).classList.add("active");
-
-        const titles = {
-          chat: t("pageChat"),
-          agents: t("pageAgents"),
-          knowledge: t("pageKnowledge"),
-          memory: t("pageMemory"),
-          workflows: t("pageWorkflows"),
-          settings: t("pageSettings"),
-        };
-        document.getElementById("page-title").textContent =
-          titles[page] || page;
-
-        if (page === "agents") loadAgents();
-        if (page === "memory") loadMemory();
-        if (page === "settings") loadVoiceStatus();
-        if (page === "workflows") loadWorkflows();
-      }
-
-      async function loadWorkflows() {
-        const statusLine = document.getElementById("workflows-status-line");
-        const tbody = document.getElementById("workflows-table");
-        const resultBox = document.getElementById("workflow-result");
-        if (!statusLine || !tbody) return;
-        statusLine.textContent = "";
-        if (resultBox) resultBox.textContent = "";
-        try {
-          const res = await fetch(API_BASE + "/workflows/status", {
-            headers: {
-              "X-API-Key": getApiKey(),
-              "Accept-Language": currentLanguage,
-            },
-          });
-          const data = await res.json();
-          if (!res.ok) {
-            statusLine.textContent = data.detail || t("loadError");
-            return;
-          }
-          const reachableText = data.reachable
-            ? currentLanguage === "en"
-              ? `n8n editor reachable at ${data.base_url} — `
-              : `محرر n8n متاح على ${data.base_url} — `
-            : currentLanguage === "en"
-              ? "n8n editor is unreachable — "
-              : "محرر n8n غير متاح — ";
-          statusLine.textContent =
-            reachableText +
-            (data.has_api_key
-              ? `Found ${data.workflows.length} workflow(s).`
-              : "No API key configured, so workflow ids cannot be listed or executed.");
-          const link = document.getElementById("workflow-open-btn");
-          if (link && data.editor_url) link.href = data.editor_url;
-          if (!data.workflows || data.workflows.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="3">${escapeHtml(data.note || t("emptyAgents"))}</td></tr>`;
-            return;
-          }
-          tbody.innerHTML = data.workflows
-            .map(
-              (w) => `
-      <tr>
-        <td>${escapeHtml(w.name)}</td>
-        <td>${escapeHtml(w.id)}</td>
-        <td><span class="badge">${escapeHtml(w.active ? t("statusActive") : t("unknown"))}</span></td>
-      </tr>
-    `,
-            )
-            .join("");
-        } catch (e) {
-          statusLine.textContent = t("loadError");
-        }
-      }
-
-      document
-        .getElementById("workflow-run-btn")
-        .addEventListener("click", async () => {
-          const id = document.getElementById("workflow-id").value.trim();
-          const box = document.getElementById("workflow-result");
-          if (!id) {
-            box.textContent =
-              currentLanguage === "en"
-                ? "Enter a workflow id first."
-                : "أدخل معرف المهمة أولًا.";
-            return;
-          }
-          box.textContent =
-            currentLanguage === "en" ? "Sending..." : "جارٍ الإرسال...";
-          try {
-            const res = await fetch(API_BASE + "/workflows", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "X-API-Key": getApiKey(),
-              },
-              body: JSON.stringify({ workflow_id: id, payload: {} }),
-            });
-            const data = await res.json();
-            box.textContent = data.approval_required
-              ? currentLanguage === "en"
-                ? `Approval requested: ${data.approval_id || ""}`
-                : `طُلبت الموافقة: ${data.approval_id || ""}`
-              : data.detail || (data.success ? "Success" : t("genericError"));
-          } catch (e) {
-            box.textContent = t("genericError") + " " + e.message;
-          }
-        });
-
-      async function loadAgents() {
-        const tbody = document.getElementById("agents-table");
-        try {
-          const res = await fetch(API_BASE + "/agents", {
-            headers: {
-              "X-API-Key": getApiKey(),
-              "Accept-Language": currentLanguage,
-            },
-          });
-          const data = await res.json();
-          const agents = data.agents || [];
-          if (agents.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="3">${escapeHtml(t("emptyAgents"))}</td></tr>`;
-            return;
-          }
-          tbody.innerHTML = agents
-            .map((a) => {
-              const desc =
-                currentLanguage === "en"
-                  ? a.description_en || a.description_ar || ""
-                  : a.description_ar || a.description_en || "";
-              return `
-      <tr>
-        <td>${escapeHtml(agentLabel(a.type, a.name))}</td>
-        <td>${escapeHtml(agentTypeLabel(a.type))}</td>
-        <td>${escapeHtml(desc)}</td>
-      </tr>
-    `;
-            })
-            .join("");
-        } catch (e) {
-          console.error(e);
-          tbody.innerHTML = `<tr><td colspan="3">${escapeHtml(t("loadError"))}</td></tr>`;
-        }
-      }
-
-      function agentLabel(type, fallback) {
-        const names = {
-          ceo: { ar: "الرئيس التنفيذي", en: "CEO" },
-          developer: { ar: "المطوّر", en: "Developer" },
-          researcher: { ar: "الباحث", en: "Researcher" },
-          analyst: { ar: "المحلّل", en: "Analyst" },
-          security: { ar: "الأمن", en: "Security" },
-          legal: { ar: "القانوني", en: "Legal" },
-        };
-        const entry = names[String(type || "").toLowerCase()];
-        if (!entry) return fallback || type || "";
-        return currentLanguage === "en" ? entry.en : entry.ar;
-      }
-
-      function agentTypeLabel(type) {
-        const types = {
-          ceo: { ar: "تنسيق استراتيجي", en: "Strategic orchestration" },
-          developer: { ar: "تطوير برمجيات", en: "Software development" },
-          researcher: { ar: "بحث وتلخيص", en: "Research & summarization" },
-          analyst: { ar: "تحليل بيانات", en: "Data analysis" },
-          security: { ar: "أمن معلومات", en: "Information security" },
-          legal: { ar: "امتثال قانوني", en: "Legal compliance" },
-        };
-        const entry = types[String(type || "").toLowerCase()];
-        if (!entry) return type || t("unknown");
-        return currentLanguage === "en" ? entry.en : entry.ar;
-      }
-
-      async function loadMemory() {
-        const box = document.getElementById("memory-list");
-        if (!currentConversationId) {
-          box.innerHTML = `<p class="voice-support">${escapeHtml(t("emptyMemory"))}</p>`;
-          return;
-        }
-        try {
-          const res = await fetch(
-            API_BASE +
-              "/memory?conversation_id=" +
-              encodeURIComponent(currentConversationId),
-            {
-              headers: {
-                "X-API-Key": getApiKey(),
-                "Accept-Language": currentLanguage,
-              },
-            },
-          );
-          const data = await res.json();
-          const messages = data.messages || [];
-          if (messages.length === 0) {
-            box.innerHTML = `<p class="voice-support">${escapeHtml(t("emptyMemory"))}</p>`;
-            return;
-          }
-          box.innerHTML = messages
-            .map(
-              (m) => `
-      <div class="msg ${escapeHtml(m.role || "")}">
-        <div>${escapeHtml(m.content)}</div>
-        <span class="meta">${escapeHtml(m.role === "user" ? t("you") : t("assistant"))} • ${escapeHtml(String(m.created_at || ""))}</span>
-      </div>
-    `,
-            )
-            .join("");
-        } catch (e) {
-          console.error(e);
-          box.innerHTML = `<p class="voice-support">${escapeHtml(t("loadError"))}</p>`;
-        }
-      }
-
-      async function searchKnowledge() {
-        const q = document.getElementById("kb-query").value;
-        if (!q) return;
-        try {
-          const res = await fetch(API_BASE + "/knowledge", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "X-API-Key": getApiKey(),
-              "Accept-Language": currentLanguage,
-            },
-            body: JSON.stringify({
-              query: q,
-              language: currentLanguage === "auto" ? "ar" : currentLanguage,
-              top_k: 5,
-              cross_language: true,
-            }),
-          });
-          const data = await res.json();
-          const box = document.getElementById("kb-results");
-          box.innerHTML = (data.citations || [])
-            .map(
-              (c) => `
-      <div class="msg assistant">
-        <div>${escapeHtml(c.content_snippet || "")}</div>
-        <div class="citation">
-          [${escapeHtml(c.id)}] ${escapeHtml(c.source || t("unknown"))} (${escapeHtml(c.language || "—")}) — ${escapeHtml(t("scoreLabel"))}: ${Number(c.score || 0).toFixed(2)}
-        </div>
-      </div>
-    `,
-            )
-            .join("");
-        } catch (e) {
-          console.error(e);
-        }
-      }
-
-      function getApiKey() {
-        return localStorage.getItem("api_key") || "";
-      }
-
-      function addMessage(text, role, lang) {
-        const area = document.getElementById("chat-area");
-        const div = document.createElement("div");
-        div.className = "msg " + role;
-        const langBadge = lang
-          ? `<span class="lang-indicator">${lang === "ar" ? (currentLanguage === "en" ? "Arabic" : "عربي") : lang === "en" ? "English" : escapeHtml(lang)}</span>`
-          : "";
-        div.innerHTML = `<div class="${lang === "ar" ? "text-ar" : "text-en"}">${escapeHtml(text)}</div><span class="meta">${escapeHtml(role === "user" ? t("you") : t("assistant"))} ${langBadge}</span>`;
-        area.appendChild(div);
-        area.scrollTop = area.scrollHeight;
-      }
-
-      function escapeHtml(s) {
-        return String(s ?? "").replace(
-          /[&<>"']/g,
-          (c) =>
-            ({
-              "&": "&amp;",
-              "<": "&lt;",
-              ">": "&gt;",
-              '"': "&quot;",
-              "'": "&#39;",
-            })[c],
-        );
-      }
-
-      async function sendMessage() {
-        const input = document.getElementById("chat-input");
-        const text = input.value.trim();
-        if (!text) return;
-        addMessage(text, "user", currentLanguage);
-        input.value = "";
-        document.getElementById("chat-error").classList.add("hidden");
-
-        try {
-          const res = await fetch(API_BASE + "/chat", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "X-API-Key": getApiKey(),
-              "Accept-Language": currentLanguage,
-            },
-            body: JSON.stringify({
-              message: text,
-              conversation_id: currentConversationId,
-              language: currentLanguage === "auto" ? "ar" : currentLanguage,
-            }),
-          });
-          const data = await res.json();
-          if (!data.success) {
-            document.getElementById("chat-error").textContent =
-              data.error || t("genericError");
-            document.getElementById("chat-error").classList.remove("hidden");
-            return;
-          }
-          currentConversationId = data.conversation_id || currentConversationId;
-          addMessage(
-            data.answer,
-            "assistant",
-            data.language || currentLanguage,
-          );
-          if (data.sources && data.sources.length > 0) {
-            const cites = data.sources
-              .map(
-                (s, i) =>
-                  `<div class="citation">[${i + 1}] ${escapeHtml(s.source || t("unknown"))} (${escapeHtml(s.language || "—")}) — ${escapeHtml(String(s.content || "").substring(0, 200))}...</div>`,
-              )
-              .join("");
-            addMessage(cites, "assistant", currentLanguage);
-          }
-          if (data.audio_bytes) {
-            playAudio(data.audio_bytes);
-          }
-        } catch (e) {
-          addMessage("خطأ: " + escapeHtml(e.message), "assistant");
-        }
-      }
-
-      document.getElementById("send-btn").onclick = sendMessage;
-      document.getElementById("chat-input").onkeypress = (e) => {
-        if (e.key === "Enter") sendMessage();
-      };
-
-      // Voice
-      const voiceBtn = document.getElementById("voice-btn");
-      voiceBtn.onclick = async () => {
-        if (isVoiceRecording) {
-          stopRecording();
-        } else {
-          startRecording();
-        }
-      };
-
-      async function getMicStream() {
-        const m = dolbySettings.mic || {};
-        const attempts = [
-          {
-            audio: {
-              echoCancellation: { ideal: m.echo !== false },
-              noiseSuppression: { ideal: m.noise !== false },
-              autoGainControl: { ideal: m.gain !== false },
-              sampleRate: { ideal: m.rate || 48000 },
-              channelCount: { ideal: m.stereo ? 2 : 1 },
-            },
-          },
-          {
-            audio: {
-              echoCancellation: true,
-              noiseSuppression: true,
-              autoGainControl: true,
-            },
-          },
-          { audio: true },
-        ];
-        let lastErr = null;
-        for (const constraints of attempts) {
-          try {
-            return await navigator.mediaDevices.getUserMedia(constraints);
-          } catch (e) {
-            lastErr = e;
-            if (
-              e &&
-              (e.name === "NotAllowedError" || e.name === "SecurityError")
-            ) {
-              throw e; // permission problem: no point trying looser constraints
-            }
-            // Overconstrained / device busy: try next, looser option.
-            continue;
-          }
-        }
-        throw lastErr;
-      }
-
-      function micDeniedText(err) {
-        const en = currentLanguage === "en";
-        const code = err && err.name ? err.name : "";
-        if (code === "NotFoundError" || code === "DevicesNotFoundError") {
-          return en
-            ? "No microphone was found. Connect a microphone and check the Windows input device."
-            : "لم يتم العثور على مايكروفون. صل المايك وتحقّق من جهاز الإدخال في ويندوز.";
-        }
-        if (
-          code === "OverconstrainedError" ||
-          code === "ConstraintNotSatisfiedError"
-        ) {
-          return en
-            ? "Your microphone does not accept the Dolby capture settings. Try the STT sample rate (16 kHz) or uncheck stereo capture."
-            : "المايك لا يقبل إعدادات Dolby Capture الحالية. جرّب معدل 16 kHz أو ألغِ تحديد الستيريو.";
-        }
-        return (
-          (en
-            ? "Microphone access denied by the system: "
-            : "تعذّر الوصول إلى الميكروفون: ") +
-          (err && err.message ? err.message : err)
-        );
-      }
-
-      async function startRecording() {
-        try {
-          const stream = await getMicStream();
-          const mime = [
-            "audio/webm;codecs=opus",
-            "audio/webm",
-            "audio/ogg;codecs=opus",
-            "audio/mp4",
-          ].find((m) => window.MediaRecorder.isTypeSupported(m));
-          mediaRecorder = mime
-            ? new MediaRecorder(stream, { mimeType: mime })
-            : new MediaRecorder(stream);
-          audioChunks = [];
-          mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
-          mediaRecorder.onstop = async () => {
-            const type = mediaRecorder.mimeType || "audio/webm";
-            const ext = type.includes("ogg")
-              ? "ogg"
-              : type.includes("mp4")
-                ? "m4a"
-                : type.includes("wav")
-                  ? "wav"
-                  : "webm";
-            const blob = new Blob(audioChunks, { type });
-            const form = new FormData();
-            form.append("audio", blob, "voice." + ext);
-            form.append(
-              "language_hint",
-              currentLanguage === "auto" ? "" : currentLanguage,
-            );
+        function loadDolbySettings() {
             try {
-              const res = await fetch(API_BASE + "/voice/process", {
-                method: "POST",
-                headers: { "X-API-Key": getApiKey() },
-                body: form,
-              });
-              const data = await res.json();
-              if (!res.ok) {
-                addMessage(
-                  t("genericError") + " " + (data.detail || res.status),
-                  "assistant",
-                );
-                return;
-              }
-              addMessage(
-                data.transcribed_text || "",
-                "user",
-                data.detected_language || currentLanguage,
-              );
-              addMessage(
-                data.answer || "",
-                "assistant",
-                data.detected_language || currentLanguage,
-              );
-              if (data.audio_base64) {
-                playAudio(data.audio_base64, data.audio_mime || "audio/wav");
-              }
-            } catch (e) {
-              addMessage(t("genericError") + " " + e.message, "assistant");
+                const raw = localStorage.getItem(DOLBY_STORAGE_KEY);
+                if (!raw) return { ...DEFAULT_DOLBY, mic: { ...DEFAULT_DOLBY.mic } };
+                const saved = JSON.parse(raw);
+                return {
+                    ...DEFAULT_DOLBY,
+                    ...saved,
+                    mic: { ...DEFAULT_DOLBY.mic, ...(saved.mic || {}) },
+                    compressor: { ...DOLBY_PRESETS.voice.compressor, ...(saved.compressor || {}) },
+                };
+            } catch { return { ...DEFAULT_DOLBY, mic: { ...DEFAULT_DOLBY.mic } }; }
+        }
+        let dolbySettings = loadDolbySettings();
+
+        // Labels
+        const LABELS = {
+            ar: {
+                sidebarTitle: "المساعد المؤسسي للذكاء الاصطناعي",
+                navChat: "المحادثة",
+                navVoice: "التحكم الصوتي",
+                navAgents: "الوكلاء",
+                navKnowledge: "قاعدة المعرفة",
+                navMemory: "الذاكرة",
+                navWorkflows: "سير العمل",
+                navSettings: "الإعدادات",
+                navTotp: "المصادقة الثنائية (TOTP)",
+                pageChat: "المحادثة",
+                pageVoice: "التحكم الصوتي",
+                pageAgents: "الوكلاء",
+                pageKnowledge: "قاعدة المعرفة",
+                pageMemory: "الذاكرة",
+                pageWorkflows: "سير العمل",
+                pageSettings: "الإعدادات",
+                logout: "تسجيل الخروج",
+                send: "إرسال",
+                voiceSupport: "الصوت: اضغط للتحدث • كشف النشاط الصوتي • كتم الضوضاء • كشف الصمت",
+                agentsTitle: "الوكلاء المتخصصون",
+                colAgent: "الوكيل",
+                colType: "النوع",
+                colDesc: "الوصف",
+                kbTitle: "البحث في قاعدة المعرفة",
+                kbPlaceholder: "أدخل استعلام البحث...",
+                kbSearch: "بحث",
+                kbCrossLang: "يدعم البحث عبر اللغات",
+                memoryTitle: "ذاكرة المحادثة",
+                workflowsTitle: "سير العمل (n8n)",
+                workflowsNote: "الإجراءات الخارجية تتطلب موافقة بشرية قبل التنفيذ.",
+                colWorkflow: "المهمة",
+                colWfType: "النوع",
+                colWfStatus: "الحالة",
+                workflowEmail: "معالجة البريد",
+                workflowGithub: "مراقبة GitHub",
+                workflowDocs: "استيراد الوثائق",
+                workflowWeb: "البحث على الويب",
+                workflowTelegram: "تيليغرام",
+                workflowWhatsapp: "واتساب",
+                workflowNotify: "الإشعارات",
+                typeAutomation: "أتمتة",
+                typeMonitor: "مراقبة",
+                typeSearch: "بحث",
+                typeMessaging: "مراسلة",
+                typeNotifications: "إشعارات",
+                statusActive: "مُفعّل",
+                chatPlaceholder: "اكتب رسالتك...",
+                voiceTitle: "اضغط للتحدث",
+                recordingTitle: "إيقاف التسجيل",
+                you: "أنت",
+                assistant: "المساعد",
+                emptyMemory: "لا توجد رسائل محفوظة في هذه المحادثة بعد.",
+                emptyAgents: "لا توجد بيانات عن الوكلاء.",
+                loadError: "تعذّر تحميل البيانات. تأكد من تشغيل الخادم.",
+                genericError: "حدث خطأ غير متوقع.",
+                micDenied: "تعذّر الوصول إلى الميكروفون: ",
+                scoreLabel: "درجة التشابه",
+                unknown: "غير معروف",
+                ready: "جاهز",
+                notReady: "غير جاهز — نفّذ سكربت تنزيل الموديلات",
+                ttsTest: "اختبار السمّاعة",
+                ttsTestText: "مرحبًا، السمّاعة تعمل الآن.",
+                ttsTesting: "جارٍ التشغيل...",
+                settingsTitle: "الإعدادات",
+                labelCoding: "نموذج البرمجة",
+                labelReasoning: "نموذج الاستدلال",
+                labelStt: "محرك تحويل الكلام إلى نص",
+                labelTts: "محرك تحويل النص إلى كلام",
+                labelVector: "قاعدة المتجهات",
+                labelDb: "قاعدة البيانات",
+                dolbyTitle: "صوت Dolby",
+                dolbySub: "معايرة عربية للمساعد: وضوح الصوت + باس خفيف + مساحة ستيريو",
+                dolbyPreset: "إعداد Dolby الأساسي",
+                dolbyMode: "الوضع",
+                dolbyEnabled: "تفعيل معالجة Dolby",
+                dolbySpatial: "المحيط المكاني (Virtual Surround)",
+                dolbyLoudness: "توحيد مستوى الصوت (Loudness)",
+                dolbyTest: "معاينة Dolby",
+                dolbyStop: "إيقاف",
+                dolbyEq: "المعادل (EQ)",
+                dolbyMic: "الميكروفون (Dolby Capture)",
+                micNoise: "إلغاء الضوضاء",
+                micEcho: "إلغاء الصدى",
+                micGain: "ضبط تلقائي للكسب",
+                micStereo: "التقاط ستيريو",
+                micRate: "معدل العينة",
+                dolbyPreviewText: "مرحبًا، معاينة Dolby جاهزة. الصوت أوضح والباس متوازن.",
+                navTotp: "المصادقة الثنائية (TOTP)",
+                totpTitle: "المصادقة الثنائية (TOTP)",
+                totpDesc: "استخدم تطبيق مصادقة (مثل Google Authenticator أو Authy) لمسح رمز QR أدناه، ثم أدخل رمز المكون من 6 أرقام لتفعيل المصادقة الثنائية.",
+                totpEnrollHeading: "تفعيل المصادقة الثنائية",
+                totpSecretLabel: "السر السري (يُعرض مرة واحدة فقط):",
+                totpOtpauthLabel: "رابط otpauth:// (للتطبيق):",
+                totpCopyText: "نسخ",
+                totpCopyOtpauthText: "نسخ الرابط",
+                totpEnrollText: "تسجيل جديد في TOTP",
+                totpEnrollResultSuccess: "تم التفعيل بنجاح. امسح رمز QR أو أدخل السر السري في تطبيق المصادقة.",
+                totpEnrollResultError: "فشل التفعيل. تأكد من تسجيل الدخول وحاول مرة أخرى.",
+                totpVerifyHeading: "تأكيد التفعيل برمز التحقق",
+                totpVerifyDesc: "أدخل الرمز المكون من 6 أرقام من تطبيق المصادقة لتأكيد أن التفعيل يعمل بشكل صحيح.",
+                totpVerifyText: "تحقق وتفعيل",
+                totpVerifyResultSuccess: "تم التحقق بنجاح! المصادقة الثنائية مفعّلة الآن.",
+                totpVerifyResultError: "رمز غير صحيح أو مستخدم سابقاً. حاول مرة أخرى.",
+                totpNote: "بعد التفعيل، سيُطلب رمز TOTP عند اعتماد طلبات الموافقة ذات المستوى الحرج (المستوى D).",
+            },
+            en: {
+                sidebarTitle: "Enterprise AI Assistant",
+                navChat: "Chat",
+                navVoice: "Voice Control",
+                navAgents: "Agents",
+                navKnowledge: "Knowledge Base",
+                navMemory: "Memory",
+                navWorkflows: "Workflows",
+                navSettings: "Settings",
+                navTotp: "Two-Factor Authentication (TOTP)",
+                pageChat: "Chat",
+                pageVoice: "Voice Control",
+                pageAgents: "Agents",
+                pageKnowledge: "Knowledge Base",
+                pageMemory: "Memory",
+                pageWorkflows: "Workflows",
+                pageSettings: "Settings",
+                logout: "Logout",
+                send: "Send",
+                voiceSupport: "Voice: push-to-talk • VAD • noise suppression • silence detection",
+                agentsTitle: "Specialized Agents",
+                colAgent: "Agent",
+                colType: "Type",
+                colDesc: "Description",
+                kbTitle: "Knowledge Base Search",
+                kbPlaceholder: "Enter search query...",
+                kbSearch: "Search",
+                kbCrossLang: "Cross-language search supported",
+                memoryTitle: "Conversation Memory",
+                workflowsTitle: "Workflows (n8n)",
+                workflowsNote: "External actions require human approval before execution.",
+                colWorkflow: "Task",
+                colWfType: "Type",
+                colWfStatus: "Status",
+                workflowEmail: "Email processing",
+                workflowGithub: "GitHub monitoring",
+                workflowDocs: "Document import",
+                workflowWeb: "Web search",
+                workflowTelegram: "Telegram",
+                workflowWhatsapp: "WhatsApp",
+                workflowNotify: "Notifications",
+                typeAutomation: "Automation",
+                typeMonitor: "Monitoring",
+                typeSearch: "Search",
+                typeMessaging: "Messaging",
+                typeNotifications: "Notifications",
+                statusActive: "Active",
+                chatPlaceholder: "Type your message...",
+                voiceTitle: "Click to talk",
+                recordingTitle: "Stop recording",
+                you: "You",
+                assistant: "Assistant",
+                emptyMemory: "No messages saved in this conversation yet.",
+                emptyAgents: "No agent data available.",
+                loadError: "Could not load data. Check that the server is running.",
+                genericError: "An unexpected error occurred.",
+                micDenied: "Cannot access the microphone: ",
+                scoreLabel: "Similarity",
+                unknown: "Unknown",
+                ready: "Ready",
+                notReady: "Not ready — run the model download script",
+                ttsTest: "Test speaker",
+                ttsTestText: "Hello, the speaker is working now.",
+                ttsTesting: "Playing...",
+                settingsTitle: "Settings",
+                labelCoding: "Coding Model",
+                labelReasoning: "Reasoning Model",
+                labelStt: "STT Engine",
+                labelTts: "TTS Engine",
+                labelVector: "Vector Store",
+                labelDb: "Database",
+                dolbyTitle: "Dolby Audio",
+                dolbySub: "Arabic-tuned assistant calibration: dialogue clarity + light bass + stereo space",
+                dolbyPreset: "Dolby Preset",
+                dolbyMode: "Mode",
+                dolbyEnabled: "Enable Dolby processing",
+                dolbySpatial: "Spatial surround (Virtual Surround)",
+                dolbyLoudness: "Loudness normalization",
+                dolbyTest: "Dolby preview",
+                dolbyStop: "Stop",
+                dolbyEq: "Equalizer (EQ)",
+                dolbyMic: "Microphone (Dolby Capture)",
+                micNoise: "Noise cancellation",
+                micEcho: "Echo cancellation",
+                micGain: "Auto gain control",
+                micStereo: "Stereo capture",
+                micRate: "Sample rate",
+                dolbyPreviewText: "Hello, Dolby preview is ready. Clearer voice, balanced bass.",
+                navTotp: "Two-Factor Authentication (TOTP)",
+                totpTitle: "Two-Factor Authentication (TOTP)",
+                totpDesc: "Use an authenticator app (such as Google Authenticator or Authy) to scan the QR code below, then enter the 6-digit code to enable two-factor authentication.",
+                totpEnrollHeading: "Enable Two-Factor Authentication",
+                totpSecretLabel: "Secret key (shown once only):",
+                totpOtpauthLabel: "otpauth:// link (for the app):",
+                totpCopyText: "Copy",
+                totpCopyOtpauthText: "Copy link",
+                totpEnrollText: "Register new TOTP",
+                totpEnrollResultSuccess: "Activation successful. Scan the QR code or enter the secret key in your authenticator app.",
+                totpEnrollResultError: "Activation failed. Please make sure you are logged in and try again.",
+                totpVerifyHeading: "Confirm activation with verification code",
+                totpVerifyDesc: "Enter the 6-digit code from your authenticator app to confirm activation works correctly.",
+                totpVerifyText: "Verify and Activate",
+                totpVerifyResultSuccess: "Verification successful! Two-factor authentication is now enabled.",
+                totpVerifyResultError: "Incorrect or already-used code. Please try again.",
+                totpNote: "After activation, a TOTP code will be required when approving critical-level (level D) approval requests.",
+            },
+            lb: {
+                sidebarTitle: "المساعد المؤسسي",
+                navChat: "المحكي",
+                navVoice: " الصوت",
+                navAgents: "الوكلاء",
+                navKnowledge: "القاعدة",
+                navMemory: "الذاكرة",
+                navWorkflows: "الأشغال",
+                navSettings: "الضبط",
+                navTotp: "الثنائي (TOTP)",
+                pageChat: "المحكي",
+                pageVoice: "التحكم بالصوت",
+                pageAgents: "الوكلاء",
+                pageKnowledge: "البحث بالقاعدة",
+                pageMemory: "الذاكرة",
+                pageWorkflows: "الأشغال",
+                pageSettings: "الضبط",
+                logout: "تسجيل الخروج",
+                send: "بعت",
+                voiceSupport: "الصوت: اضغط لتروح • كشف الصوت • كتم الضجيج • كشف الصمت",
+                agentsTitle: "الوكلاء المتخصصين",
+                colAgent: "الوكيل",
+                colType: "النوع",
+                colDesc: "الوصف",
+                kbTitle: "البحث في القاعدة",
+                kbPlaceholder: "أكتب استعلام البحث...",
+                kbSearch: "ابحث",
+                kbCrossLang: "يدعم البحث ما بين اللغات",
+                memoryTitle: "ذاكرة المحكي",
+                workflowsTitle: "الأشغال (n8n)",
+                workflowsNote: "الأشغال الخارجية تحتاج موافقة بشرية قبل التنفيذ.",
+                colWorkflow: "الشغل",
+                colWfType: "النوع",
+                colWfStatus: "الحالة",
+                workflowEmail: "معالجة الإيميل",
+                workflowGithub: "مراقبة GitHub",
+                workflowDocs: "استيراد الوثائق",
+                workflowWeb: "البحث على الويب",
+                workflowTelegram: "تيليغرام",
+                workflowWhatsapp: "واتساب",
+                workflowNotify: "الإشعارات",
+                typeAutomation: "أتمتة",
+                typeMonitor: "مراقبة",
+                typeSearch: "بحث",
+                typeMessaging: "مراسلة",
+                typeNotifications: "إشعارات",
+                statusActive: "مفعل",
+                chatPlaceholder: "أكتب رسالتك...",
+                voiceTitle: "اضغط لتروح",
+                recordingTitle: "إيقاف التسجيل",
+                you: "أنا",
+                assistant: "المساعد",
+                emptyMemory: "ما في رسائل محفوظة في هالمحكي بعد.",
+                emptyAgents: "ما في بيانات عن الوكلاء.",
+                loadError: "ما في est التحميل. تأكد أن الخادم شغال.",
+                genericError: "حصل خطأ غير متوقع.",
+                micDenied: "ما في وصول للميكروفون: ",
+                scoreLabel: "درجة التشابه",
+                unknown: "مجهول",
+                ready: "جاهز",
+                notReady: "غير جاهز — نفذ سكربت تحميل الموديل",
+                ttsTest: "اختبار السماعة",
+                ttsTestText: "مرحبا، السماعة شغالة الآن.",
+                ttsTesting: "شغال...",
+                settingsTitle: "الضبط",
+                labelCoding: "نموذج البرمجة",
+                labelReasoning: "نموذج الاستدلال",
+                labelStt: "محرك تحويل الكلام لنص",
+                labelTts: "محرك تحويل النص لكلام",
+                labelVector: "قاعدة المتجهات",
+                labelDb: "قاعدة البيانات",
+                dolbyTitle: "صوت Dolby",
+                dolbySub: "معايرة عربية للمساعد: صوت واضح + باس خفيف + مساحة ستيريو",
+                dolbyPreset: "إعداد Dolby الأساسي",
+                dolbyMode: "الوضع",
+                dolbyEnabled: "فعل معالجة Dolby",
+                dolbySpatial: "المحيط المكاني (Virtual Surround)",
+                dolbyLoudness: "توحيد مستوى الصوت",
+                dolbyTest: "معاينة Dolby",
+                dolbyStop: "أوقف",
+                dolbyEq: "المعادل (EQ)",
+                dolbyMic: "الميكروفون (Dolby Capture)",
+                micNoise: "إلغاء الضجيج",
+                micEcho: "إلغاء الصدى",
+                micGain: "ضبط تلقائي للكسب",
+                micStereo: "التقاط ستيريو",
+                micRate: "معدل العينة",
+                dolbyPreviewText: "مرحبا، معاينة Dolby جاهزة. الصوت أوضح والباس متوازن.",
+                navTotp: "الثنائي (TOTP)",
+                totpTitle: "الثنائي (TOTP)",
+                totpDesc: "استخدم تطبيق مصادقة (مثل Google Authenticator أو Authy) لمسح رمز QR أدناه، ثم أدخل رمز المكون من 6 أرقام لتفعيل المصادقة الثنائية.",
+                totpEnrollHeading: "تفعيل المصادقة الثنائية",
+                totpSecretLabel: "السر السري (يظهر مرة واحدة فقط):",
+                totpOtpauthLabel: "رابط otpauth:// (للتطبيق):",
+                totpCopyText: "انسخ",
+                totpCopyOtpauthText: "انسخ الرابط",
+                totpEnrollText: "تسجيل جديد في TOTP",
+                totpEnrollResultSuccess: "تم التفعيل. امسح رمز QR أو أدخل السر السري في تطبيق المصادقة.",
+                totpEnrollResultError: "فشل التفعيل. تأكد من تسجيل الدخول وحاول مرة ثانية.",
+                totpVerifyHeading: "تأكيد التفعيل برمز التحقق",
+                totpVerifyDesc: "أدخل الرمز المكون من 6 أرقام من تطبيق المصادقة لتأكيد أن التفعيل شغال.",
+                totpVerifyText: "تحقق وفعل",
+                totpVerifyResultSuccess: "تم التحقق! المصادقة الثنائية مفعلة الآن.",
+                totpVerifyResultError: "رمز غير صحيح أو مستخدم سابقا. حاول مرة ثانية.",
+                totpNote: "بعد التفعيل، سيطلب رمز TOTP عند اعتماد طلبات الموافقة ذات المستوى الحرج (المستوى D).",
+            },
+        };
+
+        function t(key) {
+            return LABELS[currentLanguage] && LABELS[currentLanguage][key]
+                ? LABELS[currentLanguage][key]
+                : LABELS.ar[key] || key;
+        }
+
+        function setLanguage(lang) {
+            currentLanguage = lang;
+            const html = document.documentElement;
+            if (lang === "ar" || lang === "auto") {
+                html.dir = "rtl";
+                html.lang = "ar";
+            } else {
+                html.dir = "ltr";
+                html.lang = "en";
             }
-            stream.getTracks().forEach((t) => t.stop());
-          };
-          mediaRecorder.start();
-          isVoiceRecording = true;
-          voiceBtn.classList.add("recording");
-          voiceBtn.title = t("recordingTitle");
-        } catch (e) {
-          console.warn("Microphone failed:", e);
-          const help =
-            currentLanguage === "en"
-              ? "\n\nFix:\n1) Windows Settings → Privacy & security → Microphone → turn ON for your browser.\n2) In the browser, click the site icon (tune icon) → Site settings → Microphone → Allow. Then reload the page.\n3) Make sure no other app is using the mic (Zoom, Discord…)."
-              : "\n\nالحل:\n1) إعدادات ويندوز ← الخصوصية والأمان ← الميكروفون ← فعّله لمتصفحك (Chrome/Edge).\n2) في المتصفح اضغط أيقونة الموقع ثم «إعدادات الموقع» ← الميكروفون ← السماح، ثم أعد تحميل الصفحة.\n3) تأكد أن لا تطبيق آخر يستخدم المايك (Zoom أو Discord…).";
-          alert(micDeniedText(e) + help);
+            document.querySelectorAll(".lang-btn").forEach((b) => b.classList.remove("active"));
+            document.getElementById("lang-" + lang).classList.add("active");
+            updateLabels();
+            const activePage = document.querySelector("section.page.active")?.id.replace("page-", "");
+            if (activePage) showPage(activePage);
         }
-      }
 
-      function stopRecording() {
-        if (mediaRecorder) {
-          try {
-            mediaRecorder.stop();
-          } catch {}
-        }
-        isVoiceRecording = false;
-        voiceBtn.classList.remove("recording");
-        voiceBtn.title = t("voiceTitle");
-      }
+        function updateLabels() {
+            document.getElementById("page-title").textContent = t("pageChat"); // default
+            document.getElementById("sidebar-title").textContent = t("sidebarTitle");
+            document.getElementById("nav-chat-text").textContent = t("navChat");
+            document.getElementById("nav-voice-text").textContent = t("navVoice");
+            document.getElementById("nav-agents-text").textContent = t("navAgents");
+            document.getElementById("nav-knowledge-text").textContent = t("navKnowledge");
+            document.getElementById("nav-memory-text").textContent = t("navMemory");
+            document.getElementById("nav-workflows-text").textContent = t("navWorkflows");
+            document.getElementById("nav-settings-text").textContent = t("navSettings");
+            document.getElementById("nav-totp-text").textContent = t("navTotp");
+            document.getElementById("send-text").textContent = t("send");
+            document.getElementById("voice-support-text").textContent = t("voiceSupport");
+            document.getElementById("chat-input").placeholder = t("chatPlaceholder");
+            document.getElementById("voice-btn").title = isVoiceRecording ? t("recordingTitle") : t("voiceTitle");
 
-      function stopDolbyPlayback() {
-        if (dolbySource) {
-          dolbySource.onended = null;
-          try {
-            dolbySource.stop();
-          } catch {}
-          dolbySource = null;
-        }
-        if (dolbyCurrentAudio) {
-          dolbyCurrentAudio.pause();
-          dolbyCurrentAudio = null;
-        }
-      }
-
-      async function playAudio(audioBase64, mime) {
-        stopDolbyPlayback();
-        if (!audioBase64) return;
-        const ctx = getAudioContext();
-        if (ctx && dolbySettings.enabled) {
-          try {
-            const buffer = await ctx.decodeAudioData(
-              base64ToArrayBuffer(audioBase64),
-            );
-            const n = buildDolbyChain(ctx);
-            const src = ctx.createBufferSource();
-            dolbySource = src;
-            src.buffer = buffer;
-            src.connect(n.highpass);
-            n.highpass.connect(n.bass);
-            n.bass.connect(n.dialogue);
-            n.dialogue.connect(n.treble);
-            n.treble.connect(n.compressor);
-            n.compressor.connect(n.splitter);
-            n.compressor.connect(n.dry);
-            n.compressor.connect(n.delay);
-            n.delay.connect(n.wet);
-            n.wet.connect(n.merger);
-            n.dry.connect(n.merger);
-            n.merger.connect(n.master);
-            n.master.connect(ctx.destination);
-            src.onended = () => {
-              dolbySource = null;
+            const titles = {
+                chat: t("pageChat"),
+                voice: t("pageVoice"),
+                agents: t("pageAgents"),
+                knowledge: t("pageKnowledge"),
+                memory: t("pageMemory"),
+                workflows: t("pageWorkflows"),
+                settings: t("pageSettings"),
+                totp: t("navTotp"),
             };
-            src.start();
-            return;
-          } catch (e) {
-            console.warn("Dolby WebAudio failed, using native player:", e);
-          }
+            const activePage = document.querySelector("section.page.active")?.id.replace("page-", "");
+            if (titles[activePage]) document.getElementById("page-title").textContent = titles[activePage];
+
+            document.getElementById("col-agent").textContent = t("colAgent");
+            document.getElementById("col-type").textContent = t("colType");
+            document.getElementById("col-desc").textContent = t("colDesc");
+
+            document.getElementById("kb-title").textContent = t("kbTitle");
+            document.getElementById("kb-query").placeholder = t("kbPlaceholder");
+            document.getElementById("kb-search-text").textContent = t("kbSearch");
+
+            document.getElementById("workflows-title").textContent = t("workflowsTitle");
+            document.getElementById("workflows-approval-note").textContent = t("workflowsNote");
+            document.getElementById("col-workflow").textContent = t("colWorkflow");
+            document.getElementById("col-wf-type").textContent = t("colWfType");
+            document.getElementById("col-wf-status").textContent = t("colWfStatus");
+
+            document.getElementById("settings-title").textContent = t("settingsTitle");
+            document.getElementById("label-coding-model").textContent = t("labelCoding");
+            document.getElementById("label-reasoning-model").textContent = t("labelReasoning");
+            document.getElementById("label-stt").textContent = t("labelStt");
+            document.getElementById("label-tts").textContent = t("labelTts");
+            document.getElementById("label-vector").textContent = t("labelVector");
+            document.getElementById("label-db").textContent = t("labelDb");
+
+            // TOTP labels
+            document.getElementById("totp-title").textContent = t("totpTitle");
+            document.getElementById("totp-desc").textContent = t("totpDesc");
+            document.getElementById("totp-enroll-heading").textContent = t("totpEnrollHeading");
+            document.getElementById("totp-secret-label").textContent = t("totpSecretLabel");
+            document.getElementById("totp-otpauth-label").textContent = t("totpOtpauthLabel");
+            document.getElementById("totp-copy-text").textContent = t("totpCopyText");
+            document.getElementById("totp-copy-otpauth-text").textContent = t("totpCopyOtpauthText");
+            document.getElementById("totp-enroll-text").textContent = t("totpEnrollText");
+            document.getElementById("totp-verify-heading").textContent = t("totpVerifyHeading");
+            document.getElementById("totp-verify-desc").textContent = t("totpVerifyDesc");
+            document.getElementById("totp-verify-text").textContent = t("totpVerifyText");
+            document.getElementById("totp-note").textContent = t("totpNote");
+
+            syncDolbyUI();
+            loadAgents();
+            loadVoiceStatus();
         }
-        const audio = new Audio(
-          "data:" + (mime || "audio/wav") + ";base64," + audioBase64,
-        );
-        dolbyCurrentAudio = audio;
-        audio.play().catch(() => {});
-      }
 
-      async function playDolbyPreview() {
-        stopDolbyPlayback();
-        const ctx = getAudioContext();
-        const text = t("dolbyPreviewText");
-        if (!ctx) return;
-        // Try server TTS preview (real voice through Dolby chain)
-        try {
-          const res = await fetch(API_BASE + "/voice/say", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "X-API-Key": getApiKey(),
-            },
-            body: JSON.stringify({
-              text,
-              language: currentLanguage === "en" ? "en" : "ar",
-            }),
-          });
-          const data = await res.json();
-          if (data.audio_base64) {
-            await playAudio(data.audio_base64, data.audio_mime || "audio/wav");
-            return;
-          }
-        } catch {}
-        // Offline fallback: soft chime sweep through Dolby chain
-        try {
-          const n = buildDolbyChain(ctx);
-          const osc = ctx.createOscillator();
-          const g = ctx.createGain();
-          dolbySource = {
-            stop: () => {
-              try {
-                osc.stop();
-              } catch {}
-            },
-            onended: null,
-          };
-          osc.type = "sine";
-          const now = ctx.currentTime;
-          osc.frequency.setValueAtTime(440, now);
-          osc.frequency.linearRampToValueAtTime(880, now + 0.35);
-          g.gain.setValueAtTime(0.0001, now);
-          g.gain.exponentialRampToValueAtTime(0.2, now + 0.05);
-          g.gain.exponentialRampToValueAtTime(0.0001, now + 0.6);
-          osc.connect(g);
-          g.connect(n.highpass);
-          n.highpass.connect(n.bass);
-          n.bass.connect(n.dialogue);
-          n.dialogue.connect(n.treble);
-          n.treble.connect(n.compressor);
-          n.compressor.connect(n.master);
-          n.master.connect(ctx.destination);
-          osc.start(now);
-          osc.stop(now + 0.65);
-          osc.onended = () => {
-            dolbySource = null;
-          };
-        } catch {}
-      }
+        const pages = ["chat", "voice", "agents", "knowledge", "memory", "workflows", "settings", "totp"];
+        function showPage(page) {
+            pages.forEach((p) => {
+                document.getElementById("page-" + p).classList.remove("active");
+                document.getElementById("nav-" + p).classList.remove("active");
+            });
+            document.getElementById("page-" + page).classList.add("active");
+            document.getElementById("nav-" + page).classList.add("active");
 
-      async function loadVoiceStatus() {
-        const sttBox = document.getElementById("status-stt");
-        const ttsBox = document.getElementById("status-tts");
-        const testText = document.getElementById("tts-test-text");
-        if (testText) testText.textContent = t("ttsTest");
-        sttBox.textContent = "";
-        ttsBox.textContent = "";
-        try {
-          const res = await fetch(API_BASE + "/voice/health", {
-            headers: { "X-API-Key": getApiKey() },
-          });
-          if (!res.ok) {
-            sttBox.textContent = t("notReady");
-            ttsBox.textContent = t("notReady");
-            return;
-          }
-          const data = await res.json();
-          const mic = data.microphone || {};
-          const spk = data.speaker || {};
-          sttBox.textContent = `${mic.model || "—"} · ${mic.ready ? t("ready") : t("notReady")}`;
-          sttBox.style.color = mic.ready ? "#059669" : "#dc2626";
-          ttsBox.textContent = `${spk.model ? spk.model.split(/[\\\\/]/).pop() : "—"} · ${spk.ready ? t("ready") : t("notReady")}`;
-          ttsBox.style.color = spk.ready ? "#059669" : "#dc2626";
-        } catch (e) {
-          sttBox.textContent = t("notReady");
-          ttsBox.textContent = t("notReady");
+            const titles = {
+                chat: t("pageChat"),
+                voice: t("pageVoice"),
+                agents: t("pageAgents"),
+                knowledge: t("pageKnowledge"),
+                memory: t("pageMemory"),
+                workflows: t("pageWorkflows"),
+                settings: t("pageSettings"),
+                totp: t("navTotp"),
+            };
+            document.getElementById("page-title").textContent = titles[page] || page;
+
+            if (page === "agents") loadAgents();
+            if (page === "memory") loadMemory();
+            if (page === "settings") loadVoiceStatus();
+            if (page === "voice") checkVoiceHealth();
         }
-      }
 
-      document.getElementById("tts-test-btn").onclick = async () => {
-        const btn = document.getElementById("tts-test-btn");
-        const label = document.getElementById("tts-test-text");
-        btn.disabled = true;
-        label.textContent = t("ttsTesting");
-        try {
-          const res = await fetch(API_BASE + "/voice/say", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "X-API-Key": getApiKey(),
-            },
-            body: JSON.stringify({
-              text: t("ttsTestText"),
-              language: currentLanguage === "en" ? "en" : "ar",
-            }),
-          });
-          const data = await res.json();
-          if (data.audio_base64) {
-            playAudio(data.audio_base64, data.audio_mime);
-          } else {
-            alert(data.detail || t("genericError"));
-          }
-        } catch (e) {
-          alert(t("genericError") + " " + e.message);
-        } finally {
-          btn.disabled = false;
-          label.textContent = t("ttsTest");
+        // ---- Toast ----
+        function showToast(message, type = "success") {
+            const toast = document.getElementById("toast");
+            toast.textContent = message;
+            toast.className = type === "error" ? "error-msg" : "";
+            toast.style.background = type === "error" ? "#dc2626" : "var(--text-primary)";
+            toast.classList.add("show");
+            setTimeout(() => toast.classList.remove("show"), 3000);
         }
-      };
 
-      // Initialize
-      function bindDolbyControls() {
-        const byId = (id) => document.getElementById(id);
-        const presetEl = byId("dolby-preset");
-        if (!presetEl) return;
-        presetEl.addEventListener("change", () =>
-          applyDolbyPreset(presetEl.value),
-        );
-        byId("dolby-enabled").addEventListener("change", (e) => {
-          dolbySettings.enabled = e.target.checked;
-          dolbySettings.preset = "custom";
-          saveDolbySettings();
-          syncDolbyUI();
+        // ---- API Key Modal ----
+        function showApiKeyModal() {
+            document.getElementById("api-key-modal").style.display = "block";
+        }
+        function hideApiKeyModal() {
+            document.getElementById("api-key-modal").style.display = "none";
+        }
+        function saveApiKey() {
+            const input = document.getElementById("api-key-input");
+            const key = input.value.trim();
+            if (!key) {
+                showToast("الرجاء إدخال مفتاح API", "error");
+                return;
+            }
+            localStorage.setItem("api_key", key);
+            hideApiKeyModal();
+            showToast("تم حفظ مفتاح API");
+        }
+        function getApiKey() {
+            return localStorage.getItem("api_key") || "";
+        }
+
+        // ---- Chat ----
+        function escapeHtml(s) {
+            return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+        }
+        function addMessage(text, role, lang) {
+            const area = document.getElementById("chat-area");
+            const div = document.createElement("div");
+            div.className = "msg " + role;
+            const langBadge = lang ? `<span class="badge">${lang === "ar" ? (currentLanguage === "en" ? "Arabic" : "عربي") : lang === "en" ? "English" : escapeHtml(lang)}</span>` : "";
+            div.innerHTML = `<div class="${lang === "ar" ? "text-ar" : "text-en"}">${escapeHtml(text)}</div><span class="meta">${escapeHtml(role === "user" ? t("you") : t("assistant"))} ${langBadge}</span>`;
+            area.appendChild(div);
+            area.scrollTop = area.scrollHeight;
+        }
+        async function sendMessage() {
+            const input = document.getElementById("chat-input");
+            const text = input.value.trim();
+            if (!text) return;
+            addMessage(text, "user", currentLanguage);
+            input.value = "";
+            document.getElementById("chat-error").style.display = "none";
+            try {
+                const res = await fetch(API_BASE + "/chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", "X-API-Key": getApiKey(), "Accept-Language": currentLanguage },
+                    body: JSON.stringify({ message: text, conversation_id: currentConversationId, language: currentLanguage === "auto" ? "ar" : currentLanguage }),
+                });
+                const data = await res.json();
+                if (!data.success) {
+                    document.getElementById("chat-error").textContent = data.error || t("genericError");
+                    document.getElementById("chat-error").style.display = "block";
+                    return;
+                }
+                currentConversationId = data.conversation_id || currentConversationId;
+                addMessage(data.answer, "assistant", data.language || currentLanguage);
+                if (data.sources && data.sources.length > 0) {
+                    const cites = data.sources.map((s, i) => `<div class="citation" style="font-size:0.85rem;color:var(--text-muted);border-left:3px solid var(--primary);padding-right:8px;margin-top:8px;background:var(--bg-body);border-radius:0 4px 4px 0;">[${i + 1}] ${escapeHtml(s.source || t("unknown"))} (${escapeHtml(s.language || "—")}) — ${escapeHtml(String(s.content || "").substring(0, 200))}...</div>`).join("");
+                    addMessage(cites, "assistant", currentLanguage);
+                }
+                if (data.audio_bytes) {
+                    playAudio(data.audio_bytes, data.audio_mime || "audio/wav");
+                }
+            } catch (e) {
+                addMessage("خطأ: " + escapeHtml(e.message), "assistant");
+            }
+        }
+        document.getElementById("send-btn").onclick = sendMessage;
+        document.getElementById("chat-input").onkeypress = (e) => { if (e.key === "Enter") sendMessage(); };
+
+        // ---- Voice Recording ----
+        const voiceBtn = document.getElementById("voice-btn");
+        const liveVoiceBtn = document.getElementById("live-voice-btn");
+        voiceBtn.onclick = async () => {
+            if (isVoiceRecording) { stopRecording(); } else { startRecording(); }
+        };
+        liveVoiceBtn.onclick = async () => {
+            if (isVoiceRecording) { stopRecording(); } else { startRecordingLive(); }
+        };
+
+        async function getMicStream() {
+            const m = dolbySettings.mic || {};
+            const attempts = [
+                { audio: { echoCancellation: { ideal: m.echo !== false }, noiseSuppression: { ideal: m.noise !== false }, autoGainControl: { ideal: m.gain !== false }, sampleRate: { ideal: m.rate || 48000 }, channelCount: { ideal: m.stereo ? 2 : 1 } } },
+                { audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } },
+                { audio: true },
+            ];
+            let lastErr = null;
+            for (const constraints of attempts) {
+                try { return await navigator.mediaDevices.getUserMedia(constraints); }
+                catch (e) { lastErr = e; if (e.name === "NotAllowedError" || e.name === "SecurityError") throw e; continue; }
+            }
+            throw lastErr;
+        }
+        async function startRecording() {
+            try {
+                const stream = await getMicStream();
+                const mime = ["audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus", "audio/mp4"].find((m) => window.MediaRecorder.isTypeSupported(m)) || "audio/webm";
+                mediaRecorder = new MediaRecorder(stream, { mimeType: mime });
+                audioChunks = [];
+                mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
+                mediaRecorder.onstop = async () => {
+                    const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType });
+                    const form = new FormData();
+                    form.append("audio", blob, "voice." + (mediaRecorder.mimeType.includes("ogg") ? "ogg" : mediaRecorder.mimeType.includes("mp4") ? "m4a" : "webm"));
+                    form.append("language_hint", currentLanguage === "auto" ? "" : currentLanguage);
+                    try {
+                        const res = await fetch(API_BASE + "/voice/process", { method: "POST", headers: { "X-API-Key": getApiKey() }, body: form });
+                        const data = await res.json();
+                        if (!res.ok) { addMessage(t("genericError") + " " + (data.detail || res.status), "assistant"); return; }
+                        addMessage(data.transcribed_text || "", "user", data.detected_language || currentLanguage);
+                        addMessage(data.answer || "", "assistant", data.detected_language || currentLanguage);
+                        if (data.audio_base64) { playAudio(data.audio_base64, data.audio_mime || "audio/wav"); }
+                    } catch (e) { addMessage(t("genericError") + " " + e.message, "assistant"); }
+                    stream.getTracks().forEach((t) => t.stop());
+                };
+                mediaRecorder.start();
+                isVoiceRecording = true;
+                voiceBtn.classList.add("recording");
+                voiceBtn.title = t("recordingTitle");
+            } catch (e) {
+                console.warn("Microphone failed:", e);
+                alert(micDeniedText(e));
+            }
+        }
+        async function startRecordingLive() {
+            try {
+                const stream = await getMicStream();
+                const mime = ["audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus", "audio/mp4"].find((m) => window.MediaRecorder.isTypeSupported(m)) || "audio/webm";
+                mediaRecorder = new MediaRecorder(stream, { mimeType: mime });
+                audioChunks = [];
+                mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
+                mediaRecorder.onstop = async () => {
+                    const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType });
+                    const form = new FormData();
+                    form.append("audio", blob, "voice." + (mediaRecorder.mimeType.includes("ogg") ? "ogg" : mediaRecorder.mimeType.includes("mp4") ? "m4a" : "webm"));
+                    form.append("language_hint", currentLanguage === "auto" ? "" : currentLanguage);
+                    try {
+                        const res = await fetch(API_BASE + "/voice/process", { method: "POST", headers: { "X-API-Key": getApiKey() }, body: form });
+                        const data = await res.json();
+                        if (!res.ok) { document.getElementById("live-result").textContent = t("genericError") + " " + (data.detail || res.status); return; }
+                        document.getElementById("live-result").innerHTML = `<strong>النص المسجل:</strong> ${escapeHtml(data.transcribed_text || "")}<br><strong>الرد:</strong> ${escapeHtml(data.answer || "")}`;
+                        if (data.audio_base64) { playAudio(data.audio_base64, data.audio_mime || "audio/wav"); }
+                    } catch (e) { document.getElementById("live-result").textContent = t("genericError") + " " + e.message; }
+                    stream.getTracks().forEach((t) => t.stop());
+                };
+                mediaRecorder.start();
+                isVoiceRecording = true;
+                liveVoiceBtn.classList.add("recording");
+                document.getElementById("live-voice-text").textContent = t("recordingTitle");
+            } catch (e) {
+                console.warn("Microphone failed:", e);
+                alert(micDeniedText(e));
+            }
+        }
+        function stopRecording() {
+            if (mediaRecorder) { try { mediaRecorder.stop(); } catch {} }
+            isVoiceRecording = false;
+            voiceBtn.classList.remove("recording");
+            liveVoiceBtn.classList.remove("recording");
+            voiceBtn.title = t("voiceTitle");
+            document.getElementById("live-voice-text").textContent = t("voiceTitle");
+        }
+        function micDeniedText(err) {
+            const en = currentLanguage === "en";
+            const code = err && err.name ? err.name : "";
+            if (code === "NotFoundError") return en ? "No microphone found." : "لم يتم العثور على مايكروفون.";
+            return (en ? "Microphone access denied: " : "تعذّر الوصول إلى الميكروفون: ") + (err && err.message ? err.message : err);
+        }
+
+        // ---- Audio Playback ----
+        function stopDolbyPlayback() {
+            if (dolbySource) { dolbySource.onended = null; try { dolbySource.stop(); } catch {}; dolbySource = null; }
+            if (dolbyCurrentAudio) { dolbyCurrentAudio.pause(); dolbyCurrentAudio = null; }
+        }
+        async function playAudio(audioBase64, mime) {
+            stopDolbyPlayback();
+            if (!audioBase64) return;
+            try {
+                const audio = new Audio("data:" + (mime || "audio/wav") + ";base64," + audioBase64);
+                dolbyCurrentAudio = audio;
+                audio.play().catch(() => {});
+            } catch {}
+        }
+
+        // ---- Agents ----
+        async function loadAgents() {
+            const tbody = document.getElementById("agents-table");
+            if (!tbody) return;
+            try {
+                const res = await fetch(API_BASE + "/agents", { headers: { "X-API-Key": getApiKey(), "Accept-Language": currentLanguage } });
+                const data = await res.json();
+                const agents = data.agents || [];
+                if (agents.length === 0) { tbody.innerHTML = `<p style="color:var(--text-muted)">${t("emptyAgents")}</p>`; return; }
+                tbody.innerHTML = agents.map((a) => `
+                    <div class="stat-card">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start">
+                            <div>
+                                <div style="font-weight:700">${escapeHtml(a.name)}</div>
+                                <div style="font-size:0.85rem; color:var(--text-muted)">${escapeHtml(a.type)}</div>
+                            </div>
+                            <span class="badge active">نشط</span>
+                        </div>
+                        <div style="margin-top:10px; color:var(--text-secondary); font-size:0.9rem">${currentLanguage === "en" ? a.description_en : a.description_ar}</div>
+                    </div>
+                `).join("");
+            } catch (e) {
+                tbody.innerHTML = `<p style="color:var(--danger)">${t("loadError")}</p>`;
+            }
+        }
+
+        // ---- Memory ----
+        async function loadMemory() {
+            const box = document.getElementById("memory-list");
+            if (!currentConversationId) { box.innerHTML = `<p class="voice-support">${t("emptyMemory")}</p>`; return; }
+            try {
+                const res = await fetch(API_BASE + "/memory?conversation_id=" + encodeURIComponent(currentConversationId), { headers: { "X-API-Key": getApiKey(), "Accept-Language": currentLanguage } });
+                const data = await res.json();
+                const messages = data.messages || [];
+                if (messages.length === 0) { box.innerHTML = `<p class="voice-support">${t("emptyMemory")}</p>`; return; }
+                box.innerHTML = messages.map((m) => `<div class="msg ${m.role}"><div>${escapeHtml(m.content)}</div><span class="meta">${escapeHtml(m.role === "user" ? t("you") : t("assistant"))} • ${escapeHtml(String(m.created_at || ""))}</span></div>`).join("");
+            } catch (e) { box.innerHTML = `<p class="voice-support">${t("loadError")}</p>`; }
+        }
+
+        // ---- Knowledge ----
+        async function searchKnowledge() {
+            const q = document.getElementById("kb-query").value;
+            if (!q) return;
+            try {
+                const res = await fetch(API_BASE + "/knowledge", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", "X-API-Key": getApiKey(), "Accept-Language": currentLanguage },
+                    body: JSON.stringify({ query: q, language: currentLanguage === "auto" ? "ar" : currentLanguage, top_k: 5, cross_language: true }),
+                });
+                const data = await res.json();
+                const box = document.getElementById("kb-results");
+                box.innerHTML = (data.citations || []).map((c, i) => `<div class="msg assistant"><div>${escapeHtml(c.content_snippet || "")}</div><div class="citation">[${i + 1}] ${escapeHtml(c.source || t("unknown"))} (${escapeHtml(c.language || "—")}) — ${t("scoreLabel")}: ${Number(c.score || 0).toFixed(2)}</div></div>`).join("");
+            } catch (e) { console.error(e); }
+        }
+
+        // ---- Workflows ----
+        async function loadWorkflows() {
+            const statusLine = document.getElementById("workflows-status-line");
+            if (!statusLine) return;
+            statusLine.textContent = "";
+            try {
+                const res = await fetch(API_BASE + "/workflows/status", { headers: { "X-API-Key": getApiKey(), "Accept-Language": currentLanguage } });
+                const data = await res.json();
+                if (!res.ok) { statusLine.textContent = data.detail || t("loadError"); return; }
+                const reachableText = data.reachable ? (currentLanguage === "en" ? `n8n editor reachable at ${data.base_url} — ` : `محرر n8n متاح على ${data.base_url} — `) : (currentLanguage === "en" ? "n8n editor is unreachable — " : "محرر n8n غير متاح — ");
+                statusLine.textContent = reachableText + (data.has_api_key ? `Found ${data.workflows.length} workflow(s).` : "No API key configured, so workflow ids cannot be listed or executed.");
+                const link = document.getElementById("workflow-open-btn");
+                if (link && data.editor_url) link.href = data.editor_url;
+            } catch (e) { statusLine.textContent = t("loadError"); }
+        }
+        document.getElementById("workflow-run-btn")?.addEventListener("click", async () => {
+            const id = document.getElementById("workflow-id").value.trim();
+            const box = document.getElementById("workflow-result");
+            if (!id) { box.textContent = currentLanguage === "en" ? "Enter a workflow id first." : "أدخل معرف المهمة أولًا."; return; }
+            box.textContent = currentLanguage === "en" ? "Sending..." : "جارٍ الإرسال...";
+            try {
+                const res = await fetch(API_BASE + "/workflows", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", "X-API-Key": getApiKey() },
+                    body: JSON.stringify({ workflow_id: id, payload: {} }),
+                });
+                const data = await res.json();
+                box.textContent = data.approval_required ? (currentLanguage === "en" ? `Approval requested: ${data.approval_id || ""}` : `طُلبت الموافقة: ${data.approval_id || ""}`) : data.detail || (data.success ? "Success" : t("genericError"));
+            } catch (e) { box.textContent = t("genericError") + " " + e.message; }
         });
-        byId("dolby-spatial").addEventListener("change", (e) => {
-          dolbySettings.spatial = e.target.checked;
-          dolbySettings.preset = "custom";
-          saveDolbySettings();
-        });
-        byId("dolby-loudness").addEventListener("change", (e) => {
-          dolbySettings.loudness = e.target.checked;
-          dolbySettings.preset = "custom";
-          saveDolbySettings();
-        });
-        const bindSlider = (id, key) => {
-          byId(id).addEventListener("input", (e) => {
-            const v = Number(e.target.value);
-            dolbySettings[key] = v;
-            dolbySettings.preset = "custom";
+
+        // ---- Settings / Dolby ----
+        async function loadVoiceStatus() {
+            const sttBox = document.getElementById("status-stt");
+            const ttsBox = document.getElementById("status-tts");
+            if (!sttBox || !ttsBox) return;
+            sttBox.textContent = ""; ttsBox.textContent = "";
+            try {
+                const res = await fetch(API_BASE + "/voice/health", { headers: { "X-API-Key": getApiKey() } });
+                if (!res.ok) { sttBox.textContent = t("notReady"); ttsBox.textContent = t("notReady"); return; }
+                const data = await res.json();
+                const mic = data.microphone || {};
+                const spk = data.speaker || {};
+                sttBox.textContent = `${mic.model || "—"} · ${mic.ready ? t("ready") : t("notReady")}`;
+                sttBox.style.color = mic.ready ? "#059669" : "#dc2626";
+                ttsBox.textContent = `${spk.model ? spk.model.split(/[\\\\/]/).pop() : "—"} · ${spk.ready ? t("ready") : t("notReady")}`;
+                ttsBox.style.color = spk.ready ? "#059669" : "#dc2626";
+            } catch (e) { sttBox.textContent = t("notReady"); ttsBox.textContent = t("notReady"); }
+        }
+        async function checkVoiceHealth() {
+            const resultBox = document.getElementById("voice-health-result");
+            try {
+                const res = await fetch(API_BASE + "/voice/health", { headers: { "X-API-Key": getApiKey() } });
+                const data = await res.json();
+                resultBox.innerHTML = `<div class="setting-card"><div style="font-weight:700">الحالة:</div><div style="margin-top:8px">الميكروفون: ${data.microphone?.ready ? "✅ جاهز" : "❌ غير جاهز"} | السماعة: ${data.speaker?.ready ? "✅ جاهز" : "❌ غير جاهز"}</div></div>`;
+            } catch (e) { resultBox.textContent = t("loadError"); }
+        }
+
+        // Dolby Audio
+        function getAudioContext() {
+            const AC = window.AudioContext || window.webkitAudioContext;
+            if (!AC) return null;
+            if (!dolbyCtx) dolbyCtx = new AC();
+            if (dolbyCtx.state === "suspended") dolbyCtx.resume().catch(() => {});
+            return dolbyCtx;
+        }
+        function base64ToArrayBuffer(b64) {
+            const bin = atob(b64.replace(/\s/g, ""));
+            const bytes = new Uint8Array(bin.length);
+            for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+            return bytes.buffer;
+        }
+        function buildDolbyChain(ctx) {
+            if (dolbyNodes) {
+                try { dolbyNodes.bass.disconnect(); } catch {}
+                try { dolbyNodes.dialogue.disconnect(); } catch {}
+                try { dolbyNodes.treble.disconnect(); } catch {}
+                try { dolbyNodes.compressor.disconnect(); } catch {}
+                try { dolbyNodes.master.disconnect(); } catch {}
+                try { dolbyNodes.splitter.disconnect(); } catch {}
+                try { dolbyNodes.merger.disconnect(); } catch {}
+                try { dolbyNodes.delay.disconnect(); } catch {}
+                try { dolbyNodes.wet.disconnect(); } catch {}
+                try { dolbyNodes.dry.disconnect(); } catch {}
+            }
+            const highpass = ctx.createBiquadFilter(); highpass.type = "highpass"; highpass.frequency.value = 60; highpass.Q.value = 0.7;
+            const bass = ctx.createBiquadFilter(); bass.type = "lowshelf"; bass.frequency.value = 160; bass.gain.value = dolbySettings.enabled ? dolbySettings.bass : 0;
+            const dialogue = ctx.createBiquadFilter(); dialogue.type = "peaking"; dialogue.frequency.value = 2400; dialogue.Q.value = 0.9; dialogue.gain.value = dolbySettings.enabled ? dolbySettings.dialogue : 0;
+            const treble = ctx.createBiquadFilter(); treble.type = "highshelf"; treble.frequency.value = 8000; treble.gain.value = dolbySettings.enabled ? dolbySettings.treble : 0;
+            const c = dolbySettings.compressor || DOLBY_PRESETS.voice.compressor;
+            const compressor = ctx.createDynamicsCompressor();
+            compressor.threshold.value = dolbySettings.enabled && dolbySettings.loudness ? c.threshold : 0;
+            compressor.knee.value = c.knee;
+            compressor.ratio.value = dolbySettings.enabled && dolbySettings.loudness ? c.ratio : 1;
+            compressor.attack.value = c.attack;
+            compressor.release.value = c.release;
+            const master = ctx.createGain(); master.gain.value = (dolbySettings.volume ?? 80) / 100;
+            const splitter = ctx.createChannelSplitter(2);
+            const merger = ctx.createChannelMerger(2);
+            const delay = ctx.createDelay(0.05);
+            const wet = ctx.createGain();
+            const dry = ctx.createGain();
+            const widthAmt = (dolbySettings.width ?? 45) / 100;
+            delay.delayTime.value = 0.008 + widthAmt * 0.012;
+            wet.gain.value = dolbySettings.enabled && dolbySettings.spatial ? 0.35 * widthAmt : 0;
+            dry.gain.value = 1;
+            dolbyNodes = { highpass, bass, dialogue, treble, compressor, master, splitter, merger, delay, wet, dry };
+            return dolbyNodes;
+        }
+        function applyDolbyPreset(name) {
+            const base = DOLBY_PRESETS[name];
+            if (!base) return;
+            dolbySettings.preset = name;
+            Object.assign(dolbySettings, { volume: base.volume, bass: base.bass, dialogue: base.dialogue, treble: base.treble, width: base.width, spatial: base.spatial, loudness: base.loudness, compressor: { ...base.compressor } });
             saveDolbySettings();
             syncDolbyUI();
-          });
-        };
-        bindSlider("dolby-volume", "volume");
-        bindSlider("dolby-bass", "bass");
-        bindSlider("dolby-dialogue", "dialogue");
-        bindSlider("dolby-treble", "treble");
-        bindSlider("dolby-width", "width");
-        byId("mic-noise").addEventListener("change", (e) => {
-          dolbySettings.mic.noise = e.target.checked;
-          saveDolbySettings();
-        });
-        byId("mic-echo").addEventListener("change", (e) => {
-          dolbySettings.mic.echo = e.target.checked;
-          saveDolbySettings();
-        });
-        byId("mic-gain").addEventListener("change", (e) => {
-          dolbySettings.mic.gain = e.target.checked;
-          saveDolbySettings();
-        });
-        byId("mic-stereo").addEventListener("change", (e) => {
-          dolbySettings.mic.stereo = e.target.checked;
-          saveDolbySettings();
-        });
-        byId("mic-rate").addEventListener("change", (e) => {
-          dolbySettings.mic.rate = Number(e.target.value);
-          saveDolbySettings();
-        });
-        byId("dolby-test-btn").addEventListener("click", playDolbyPreview);
-        byId("dolby-stop-btn").addEventListener("click", stopDolbyPlayback);
+        }
+        function syncDolbyUI() {
+            const byId = (id) => document.getElementById(id);
+            if (!byId("dolby-preset")) return;
+            byId("dolby-preset").value = dolbySettings.preset || "voice";
+            byId("dolby-enabled").checked = !!dolbySettings.enabled;
+            byId("dolby-spatial").checked = !!dolbySettings.spatial;
+            byId("dolby-loudness").checked = !!dolbySettings.loudness;
+            byId("dolby-volume").value = dolbySettings.volume;
+            byId("dolby-bass").value = dolbySettings.bass;
+            byId("dolby-dialogue").value = dolbySettings.dialogue;
+            byId("dolby-treble").value = dolbySettings.treble;
+            byId("dolby-width").value = dolbySettings.width;
+            byId("dolby-volume-val").textContent = dolbySettings.volume;
+            byId("dolby-bass-val").textContent = (dolbySettings.bass >= 0 ? "+" : "") + dolbySettings.bass;
+            byId("dolby-dialogue-val").textContent = (dolbySettings.dialogue >= 0 ? "+" : "") + dolbySettings.dialogue;
+            byId("dolby-treble-val").textContent = (dolbySettings.treble >= 0 ? "+" : "") + dolbySettings.treble;
+            byId("dolby-width-val").textContent = dolbySettings.width;
+            byId("mic-noise").checked = !!dolbySettings.mic.noise;
+            byId("mic-echo").checked = !!dolbySettings.mic.echo;
+            byId("mic-gain").checked = !!dolbySettings.mic.gain;
+            byId("mic-stereo").checked = !!dolbySettings.mic.stereo;
+            byId("mic-rate").value = String(dolbySettings.mic.rate || 48000);
+        }
+        function saveDolbySettings() {
+            try { localStorage.setItem(DOLBY_STORAGE_KEY, JSON.stringify(dolbySettings)); } catch {}
+        }
+        function bindDolbyControls() {
+            const byId = (id) => document.getElementById(id);
+            const presetEl = byId("dolby-preset");
+            if (!presetEl) return;
+            presetEl.addEventListener("change", () => applyDolbyPreset(presetEl.value));
+            byId("dolby-enabled").addEventListener("change", (e) => { dolbySettings.enabled = e.target.checked; dolbySettings.preset = "custom"; saveDolbySettings(); syncDolbyUI(); });
+            byId("dolby-spatial").addEventListener("change", (e) => { dolbySettings.spatial = e.target.checked; dolbySettings.preset = "custom"; saveDolbySettings(); syncDolbyUI(); });
+            byId("dolby-loudness").addEventListener("change", (e) => { dolbySettings.loudness = e.target.checked; dolbySettings.preset = "custom"; saveDolbySettings(); syncDolbyUI(); });
+            const bindSlider = (id, key) => {
+                byId(id).addEventListener("input", (e) => { const v = Number(e.target.value); dolbySettings[key] = v; dolbySettings.preset = "custom"; saveDolbySettings(); syncDolbyUI(); });
+            };
+            bindSlider("dolby-volume", "volume");
+            bindSlider("dolby-bass", "bass");
+            bindSlider("dolby-dialogue", "dialogue");
+            bindSlider("dolby-treble", "treble");
+            bindSlider("dolby-width", "width");
+            byId("mic-noise").addEventListener("change", (e) => { dolbySettings.mic.noise = e.target.checked; saveDolbySettings(); });
+            byId("mic-echo").addEventListener("change", (e) => { dolbySettings.mic.echo = e.target.checked; saveDolbySettings(); });
+            byId("mic-gain").addEventListener("change", (e) => { dolbySettings.mic.gain = e.target.checked; saveDolbySettings(); });
+            byId("mic-stereo").addEventListener("change", (e) => { dolbySettings.mic.stereo = e.target.checked; saveDolbySettings(); });
+            byId("mic-rate").addEventListener("change", (e) => { dolbySettings.mic.rate = Number(e.target.value); saveDolbySettings(); });
+            byId("dolby-test-btn").addEventListener("click", () => {
+                const ctx = getAudioContext();
+                if (!ctx) return;
+                const n = buildDolbyChain(ctx);
+                const osc = ctx.createOscillator();
+                const g = ctx.createGain();
+                dolbySource = { stop: () => { try { osc.stop(); } catch {} }, onended: null };
+                osc.type = "sine";
+                const now = ctx.currentTime;
+                osc.frequency.setValueAtTime(440, now);
+                osc.frequency.linearRampToValueAtTime(880, now + 0.35);
+                g.gain.setValueAtTime(0.0001, now);
+                g.gain.exponentialRampToValueAtTime(0.2, now + 0.05);
+                g.gain.exponentialRampToValueAtTime(0.0001, now + 0.6);
+                osc.connect(g);
+                g.connect(n.highpass);
+                n.highpass.connect(n.bass);
+                n.bass.connect(n.dialogue);
+                n.dialogue.connect(n.treble);
+                n.treble.connect(n.compressor);
+                n.compressor.connect(n.master);
+                n.master.connect(ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.65);
+                osc.onended = () => { dolbySource = null; };
+            });
+            byId("dolby-stop-btn").addEventListener("click", stopDolbyPlayback);
+        }
 
-        // ---------- TOTP enrollment & verification ----------
-        const totpEnrollBtn = byId("totp-enroll-btn");
-        const totpVerifyBtn = byId("totp-verify-btn");
-        const totpCopyBtn = byId("totp-copy-btn");
-        const totpCopyOtpauthBtn = byId("totp-copy-otpauth-btn");
-        const totpSecretInput = byId("totp-secret");
-        const totpOtpauthInput = byId("totp-otpauth");
-        const totpCodeInput = byId("totp-code");
-        const totpEnrollResult = byId("totp-enroll-result");
-        const totpVerifyResult = byId("totp-verify-result");
-
+        // ---- TOTP ----
         function showTotpResult(el, text, isError) {
-          el.textContent = text;
-          el.style.color = isError ? "#dc2626" : "#059669";
-          el.style.fontSize = "0.9rem";
-          el.style.fontWeight = "600";
+            el.textContent = text;
+            el.style.color = isError ? "#dc2626" : "#059669";
+            el.style.fontSize = "0.9rem";
+            el.style.fontWeight = "600";
         }
-
         async function enrollTotp() {
-          try {
-            const res = await fetch(API_BASE + "/auth/totp/enroll", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "X-API-Key": getApiKey(),
-                "Accept-Language": currentLanguage,
-              },
-            });
-            const data = await res.json();
-            if (!res.ok || !data.secret) {
-              showTotpResult(
-                totpEnrollResult,
-                data.detail ||
-                  (currentLanguage === "en"
-                    ? "Enrollment failed."
-                    : "فشل التسجيل."),
-                true
-              );
-              return;
-            }
-            totpSecretInput.value = data.secret;
-            totpOtpauthInput.value = data.otpauth_url;
-            showTotpResult(
-              totpEnrollResult,
-              currentLanguage === "en"
-                ? data.message_en
-                : data.message_ar,
-              false
-            );
-          } catch (e) {
-            showTotpResult(
-              totpEnrollResult,
-              "Error: " + e.message,
-              true
-            );
-          }
+            try {
+                const res = await fetch(API_BASE + "/auth/totp/enroll", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", "X-API-Key": getApiKey(), "Accept-Language": currentLanguage },
+                });
+                const data = await res.json();
+                if (!res.ok || !data.secret) {
+                    showTotpResult(document.getElementById("totp-enroll-result"), data.detail || (currentLanguage === "en" ? "Enrollment failed." : "فشل التسجيل."), true);
+                    return;
+                }
+                document.getElementById("totp-secret").value = data.secret;
+                document.getElementById("totp-otpauth").value = data.otpauth_url;
+                showTotpResult(document.getElementById("totp-enroll-result"), currentLanguage === "en" ? data.message_en : data.message_ar, false);
+            } catch (e) { showTotpResult(document.getElementById("totp-enroll-result"), "Error: " + e.message, true); }
         }
-
         async function verifyTotp() {
-          const code = totpCodeInput.value.trim();
-          if (!/^\d{6}$/.test(code)) {
-            showTotpResult(
-              totpVerifyResult,
-              currentLanguage === "en"
-                ? "Please enter a 6-digit code."
-                : "الرجاء إدخال رمز من 6 أرقام.",
-              true
-            );
-            return;
-          }
-          try {
-            const res = await fetch(API_BASE + "/auth/totp/verify", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "X-API-Key": getApiKey(),
-                "Accept-Language": currentLanguage,
-              },
-              body: JSON.stringify({ code }),
-            });
-            const data = await res.json();
-            if (!res.ok || !data.success) {
-              showTotpResult(
-                totpVerifyResult,
-                data.detail ||
-                  (currentLanguage === "en"
-                    ? "Verification failed."
-                    : "فشل التحقق."),
-                true
-              );
-              return;
+            const code = document.getElementById("totp-code").value.trim();
+            if (!/^\d{6}$/.test(code)) {
+                showTotpResult(document.getElementById("totp-verify-result"), currentLanguage === "en" ? "Please enter a 6-digit code." : "الرجاء إدخال رمز من 6 أرقام.", true);
+                return;
             }
-            showTotpResult(
-              totpVerifyResult,
-              currentLanguage === "en"
-                ? data.message_en || "Verification successful!"
-                : data.message_ar || "تم التحقق بنجاح!",
-              false
-            );
-            totpCodeInput.value = "";
-          } catch (e) {
-            showTotpResult(
-              totpVerifyResult,
-              "Error: " + e.message,
-              true
-            );
-          }
+            try {
+                const res = await fetch(API_BASE + "/auth/totp/verify", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", "X-API-Key": getApiKey(), "Accept-Language": currentLanguage },
+                    body: JSON.stringify({ code }),
+                });
+                const data = await res.json();
+                if (!res.ok || !data.success) {
+                    showTotpResult(document.getElementById("totp-verify-result"), data.detail || (currentLanguage === "en" ? "Verification failed." : "فشل التحقق."), true);
+                    return;
+                }
+                showTotpResult(document.getElementById("totp-verify-result"), currentLanguage === "en" ? (data.message_en || "Verification successful!") : (data.message_ar || "تم التحقق بنجاح!"), false);
+                document.getElementById("totp-code").value = "";
+            } catch (e) { showTotpResult(document.getElementById("totp-verify-result"), "Error: " + e.message, true); }
         }
 
-        totpEnrollBtn.onclick = enrollTotp;
-        totpVerifyBtn.onclick = verifyTotp;
+        // ---- Theme ----
+        function toggleTheme() {
+            const html = document.documentElement;
+            const isDark = html.getAttribute("data-theme") === "dark";
+            html.setAttribute("data-theme", isDark ? "light" : "dark");
+            localStorage.setItem("theme", isDark ? "light" : "dark");
+        }
 
-        totpCopyBtn.onclick = () => {
-          totpSecretInput.select();
-          document.execCommand("copy");
-          const orig = totpCopyBtn.textContent;
-          totpCopyBtn.textContent =
-            currentLanguage === "en" ? "Copied!" : "تم النسخ!";
-          setTimeout(() => {
-            totpCopyBtn.textContent = orig;
-          }, 1200);
-        };
+        // ---- Init ----
+        function init() {
+            // Theme
+            const savedTheme = localStorage.getItem("theme");
+            if (savedTheme) document.documentElement.setAttribute("data-theme", savedTheme);
+            document.getElementById("theme-btn").addEventListener("click", toggleTheme);
 
-        totpCopyOtpauthBtn.onclick = () => {
-          totpOtpauthInput.select();
-          document.execCommand("copy");
-          const orig = totpCopyOtpauthBtn.textContent;
-          totpCopyOtpauthBtn.textContent =
-            currentLanguage === "en" ? "Copied!" : "تم النسخ!";
-          setTimeout(() => {
-            totpCopyOtpauthBtn.textContent = orig;
-          }, 1200);
-        };
-      }
-      bindDolbyControls();
-      syncDolbyUI();
-      showPage("chat");
-      updateLabels();
+            // Language
+            const savedLang = localStorage.getItem("language") || "ar";
+            setLanguage(savedLang);
+
+            // Dolby
+            bindDolbyControls();
+            syncDolbyUI();
+
+            // TOTP buttons
+            document.getElementById("totp-enroll-btn").onclick = enrollTotp;
+            document.getElementById("totp-verify-btn").onclick = verifyTotp;
+            document.getElementById("totp-copy-btn").onclick = () => {
+                const el = document.getElementById("totp-secret");
+                el.select(); document.execCommand("copy");
+                showToast(currentLanguage === "en" ? "Copied!" : "تم النسخ!");
+            };
+            document.getElementById("totp-copy-otpauth-btn").onclick = () => {
+                const el = document.getElementById("totp-otpauth");
+                el.select(); document.execCommand("copy");
+                showToast(currentLanguage === "en" ? "Copied!" : "تم النسخ!");
+            };
+
+            showPage("chat");
+        }
+        init();
     </script>
-  </body>
+</body>
 </html>
