@@ -47,7 +47,7 @@ async def main():
     p.add_argument(
         "--model", default="gemma4:e2b"
     )  # for logging only (server chooses model)
-    p.add_argument("--api-key", default="demo-key-001")
+    p.add_argument("--api-key", default="")
     args = p.parse_args()
     levels = [int(x.strip()) for x in args.concurrency.split(",") if x.strip()]
     print(f"LOAD TEST CPU-ONLY model-hint={args.model} levels={levels}")

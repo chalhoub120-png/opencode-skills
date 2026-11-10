@@ -1,16 +1,4 @@
 services:
-  ollama:
-    image: busybox@sha256:a46257e06c82ad85242d0d38077d0a52d9896389ca60a1a59d3463db586e5fa4
-    container_name: ai-ollama
-    command: sleep infinity
-    ports:
-      - "127.0.0.1:11435:11434"
-    volumes:
-      - ollama:/root/.ollama
-    restart: always
-    networks:
-      - ai-network
-
   qdrant:
     image: qdrant/qdrant@sha256:9bfc89f9914fc14876a88c05270685921a55b8877b254a98bcc1cc2f0a424cd2
     container_name: ai-qdrant
@@ -125,38 +113,11 @@ services:
       - redis
       - qdrant
 
-  dify:
-    image: langgenius/dify-api:1.19.0
-    container_name: ai-dify
-    ports:
-      - "127.0.0.1:5001:5001"
-    environment:
-      DATABASE_URL: ${DIFY_DATABASE_URL:?DIFY_DATABASE_URL is required}
-      REDIS_URL: redis://redis:6379/0
-      QDRANT_HOST: qdrant
-      QDRANT_PORT: 6333
-      OLLAMA_BASE_URL: http://ollama:11434
-      SECRET_KEY: ${DIFY_SECRET_KEY}
-    volumes:
-      - dify_storage:/app/storage
-    restart: always
-    networks:
-      - ai-network
-    profiles:
-      - dify
-    depends_on:
-      - postgres
-      - redis
-      - qdrant
-      - ollama
-
 volumes:
-  ollama:
   qdrant:
   postgres:
   redis:
   n8n:
-  dify_storage:
 
 networks:
   ai-network:

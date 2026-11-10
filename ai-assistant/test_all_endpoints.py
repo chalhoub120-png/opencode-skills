@@ -1,7 +1,7 @@
 import urllib.request, json
 
 BASE_URL = "http://127.0.0.1:8100"
-API_KEY = "demo-key-001"
+API_KEY = os.getenv("API_KEY", "")
 
 
 def test_endpoint(method, path, data=None):

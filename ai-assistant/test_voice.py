@@ -19,7 +19,7 @@ import urllib.request
 import uuid
 
 BASE_URL = os.getenv("API_BASE_URL", "http://127.0.0.1:8001")
-API_KEY = os.getenv("API_KEY", "demo-key-001")
+API_KEY = os.getenv("API_KEY", "")
 OUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_output")
 
 
@@ -38,7 +38,9 @@ def _post_json(path: str, payload: dict, timeout: int = 120) -> dict:
         return json.loads(response.read().decode("utf-8"))
 
 
-def _post_multipart(path: str, file_path: str, filename: str, timeout: int = 300) -> dict:
+def _post_multipart(
+    path: str, file_path: str, filename: str, timeout: int = 300
+) -> dict:
     boundary = "----voice" + uuid.uuid4().hex
     with open(file_path, "rb") as handle:
         audio = handle.read()

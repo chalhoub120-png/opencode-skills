@@ -17,7 +17,7 @@ async def seed() -> None:
     await db.connect()
 
     # Create admin user
-    admin_api_key = os.getenv("ADMIN_API_KEY", "admin-key-001")
+    admin_api_key = os.getenv("ADMIN_API_KEY", "")
     try:
         await db.create_user(
             username="admin",
@@ -32,7 +32,7 @@ async def seed() -> None:
         print(f"Admin user may already exist: {exc}")
 
     # Create demo user
-    demo_api_key = os.getenv("DEMO_API_KEY", "demo-key-001")
+    demo_api_key = os.getenv("DEMO_API_KEY", "")
     try:
         await db.create_user(
             username="demo",
