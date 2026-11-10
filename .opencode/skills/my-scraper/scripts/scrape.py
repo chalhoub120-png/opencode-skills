@@ -23,7 +23,7 @@ def save(name, text):
 
 def post(path, body, key):
     r = requests.post(
-        "https://api.firecrawl.dev/v1" + path,
+        "https://api.firecrawl.dev/v2" + path,
         headers={"Authorization": "Bearer " + key},
         json=body,
         timeout=180,
@@ -52,13 +52,20 @@ def main():
         try:
             if line.lower().startswith("search:"):
                 q = line[7:].strip()
-                d = post("/search", {"query": q, "limit": 8,
-                         "scrapeOptions": {"formats": ["markdown"]}}, key)
+                d = post(
+                    "/search",
+                    {
+                        "query": q,
+                        "limit": 8,
+                        "scrapeOptions": {"formats": ["markdown"]},
+                    },
+                    key,
+                )
                 if d:
                     parts = [
                         f"## {i}. {x.get('title', '')}\nSource: {x.get('url', '')}\n\n"
                         f"{x.get('markdown') or x.get('description', '')}\n"
-                        for i, x in enumerate(d.get("data", []), 1)
+                        for i, x in enumerate(d.get("data", {}).get("web", []), 1)
                     ]
                     save("search-" + slug(q), "\n---\n\n".join(parts))
             else:
