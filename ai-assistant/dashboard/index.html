@@ -462,6 +462,9 @@
         <a href="#" onclick="showPage('settings')" id="nav-settings"
           >⚙️ <span id="nav-settings-text">الإعدادات</span></a
         >
+        <a href="#" onclick="showPage('totp')" id="nav-totp"
+          >🔐 <span id="nav-totp-text">المصادقة الثنائية (TOTP)</span></a
+        >
       </nav>
     </div>
     <div class="main">
@@ -807,7 +810,86 @@
       </section>
     </div>
 
-    <script>
+    <!-- TOTP Page (two-factor enrollment & verification) -->
+    <section id="page-totp" class="card hidden">
+      <h3 id="totp-title">المصادقة الثنائية (TOTP)</h3>
+      <p id="totp-desc"
+        style="color:#6b7280; font-size:0.9rem; margin-bottom:16px"
+      >
+        استخدم تطبيق مصادقة (مثل Google Authenticator أو Authy) لمسح رمز QR
+        أدناه، ثم أدخل رمز المكون من 6 أرقام لتفعيل المصادقة الثنائية.
+      </p>
+
+      <!-- Enrollment card -->
+      <div id="totp-enroll-card" class="card" style="margin-bottom:16px; padding:16px">
+        <h4 id="totp-enroll-heading">تفعيل المصادقة الثنائية</h4>
+        <div style="margin-bottom:12px">
+          <label id="totp-secret-label">السر السري (يُعرض مرة واحدة فقط):</label>
+        </div>
+        <div style="display:flex; gap:8px; margin-bottom:12px">
+          <input
+            type="text"
+            id="totp-secret"
+            readonly
+            style="flex:1; font-family:monospace; font-size:0.9rem; background:#f3f4f6; border:1px solid #d1d5db; border-radius:6px; padding:8px 10px; word-break:break-all"
+          />
+          <button class="btn secondary" id="totp-copy-btn">
+            <span id="totp-copy-text">نسخ</span>
+          </button>
+        </div>
+        <div style="margin-bottom:12px">
+          <label id="totp-otpauth-label">رابط otpauth:// (للتطبيق):</label>
+        </div>
+        <div style="display:flex; gap:8px; margin-bottom:12px">
+          <input
+            type="text"
+            id="totp-otpauth"
+            readonly
+            style="flex:1; font-family:monospace; font-size:0.85rem; background:#f3f4f6; border:1px solid #d1d5db; border-radius:6px; padding:8px 10px; word-break:break-all"
+          />
+          <button class="btn secondary" id="totp-copy-otpauth-btn">
+            <span id="totp-copy-otpauth-text">نسخ</span>
+          </button>
+        </div>
+        <button class="btn" id="totp-enroll-btn">
+          <span id="totp-enroll-text">تسجيل جديد في TOTP</span>
+        </button>
+        <div id="totp-enroll-result" style="margin-top:10px; min-height:20px"></div>
+      </div>
+
+      <!-- Verification card -->
+      <div id="totp-verify-card" class="card" style="padding:16px">
+        <h4 id="totp-verify-heading">تأكيد التفعيل برمز التحقق</h4>
+        <p id="totp-verify-desc"
+          style="color:#6b7280; font-size:0.85rem; margin-bottom:12px"
+        >
+          أدخل الرمز المكون من 6 أرقام من تطبيق المصادقة لتأكيد أن التفعيل
+          يعمل بشكل صحيح.
+        </p>
+        <div style="display:flex; gap:8px; margin-bottom:12px; align-items:center">
+          <input
+            type="text"
+            id="totp-code"
+            maxlength="6"
+            placeholder="000000"
+            style="width:120px; font-family:monospace; font-size:1.1rem; text-align:center; padding:8px 10px; border:1px solid #d1d5db; border-radius:6px; letter-spacing:4px"
+          />
+          <button class="btn" id="totp-verify-btn">
+            <span id="totp-verify-text">تحقق وتفعيل</span>
+          </button>
+        </div>
+        <div id="totp-verify-result" style="margin-top:10px; min-height:20px"></div>
+        <p id="totp-note"
+          style="color:#6b7280; font-size:0.85rem; margin-top:10px"
+        >
+          بعد التفعيل، سيُطلب رمز TOTP عند اعتماد طلبات الموافقة ذات المستوى
+          الحرج (المستوى D).
+        </p>
+      </div>
+    </section>
+  </div>
+
+  <script>
       const API_BASE = window.location.origin;
       let currentConversationId = null;
       let currentLanguage = "ar"; // 'ar', 'en', or 'auto'
@@ -1201,6 +1283,23 @@
           micRate: "معدل العينة",
           dolbyPreviewText:
             "مرحبًا، معاينة Dolby جاهزة. الصوت أوضح والباس متوازن.",
+          navTotp: "المصادقة الثنائية (TOTP)",
+          totpTitle: "المصادقة الثنائية (TOTP)",
+          totpDesc: "استخدم تطبيق مصادقة (مثل Google Authenticator أو Authy) لمسح رمز QR أدناه، ثم أدخل رمز المكون من 6 أرقام لتفعيل المصادقة الثنائية.",
+          totpEnrollHeading: "تفعيل المصادقة الثنائية",
+          totpSecretLabel: "السر السري (يُعرض مرة واحدة فقط):",
+          totpOtpauthLabel: "رابط otpauth:// (للتطبيق):",
+          totpCopyText: "نسخ",
+          totpCopyOtpauthText: "نسخ الرابط",
+          totpEnrollText: "تسجيل جديد في TOTP",
+          totpEnrollResultSuccess: "تم التفعيل بنجاح. امسح رمز QR أو أدخل السر السري في تطبيق المصادقة.",
+          totpEnrollResultError: "فشل التفعيل. تأكد من تسجيل الدخول وحاول مرة أخرى.",
+          totpVerifyHeading: "تأكيد التفعيل برمز التحقق",
+          totpVerifyDesc: "أدخل الرمز المكون من 6 أرقام من تطبيق المصادقة لتأكيد أن التفعيل يعمل بشكل صحيح.",
+          totpVerifyText: "تحقق وتفعيل",
+          totpVerifyResultSuccess: "تم التحقق بنجاح! المصادقة الثنائية مفعّلة الآن.",
+          totpVerifyResultError: "رمز غير صحيح أو مستخدم سابقاً. حاول مرة أخرى.",
+          totpNote: "بعد التفعيل، سيُطلب رمز TOTP عند اعتماد طلبات الموافقة ذات المستوى الحرج (المستوى D).",
         },
         en: {
           sidebarTitle: "Enterprise AI Assistant",
@@ -1291,6 +1390,23 @@
           micRate: "Sample rate",
           dolbyPreviewText:
             "Hello, Dolby preview is ready. Clearer voice, balanced bass.",
+          navTotp: "Two-Factor Authentication (TOTP)",
+          totpTitle: "Two-Factor Authentication (TOTP)",
+          totpDesc: "Use an authenticator app (such as Google Authenticator or Authy) to scan the QR code below, then enter the 6-digit code to enable two-factor authentication.",
+          totpEnrollHeading: "Enable Two-Factor Authentication",
+          totpSecretLabel: "Secret key (shown once only):",
+          totpOtpauthLabel: "otpauth:// link (for the app):",
+          totpCopyText: "Copy",
+          totpCopyOtpauthText: "Copy link",
+          totpEnrollText: "Register new TOTP",
+          totpEnrollResultSuccess: "Activation successful. Scan the QR code or enter the secret key in your authenticator app.",
+          totpEnrollResultError: "Activation failed. Please make sure you are logged in and try again.",
+          totpVerifyHeading: "Confirm activation with verification code",
+          totpVerifyDesc: "Enter the 6-digit code from your authenticator app to confirm activation works correctly.",
+          totpVerifyText: "Verify and Activate",
+          totpVerifyResultSuccess: "Verification successful! Two-factor authentication is now enabled.",
+          totpVerifyResultError: "Incorrect or already-used code. Please try again.",
+          totpNote: "After activation, a TOTP code will be required when approving critical-level (level D) approval requests.",
         },
       };
 
@@ -1339,6 +1455,7 @@
           t("navWorkflows");
         document.getElementById("nav-settings-text").textContent =
           t("navSettings");
+        document.getElementById("nav-totp-text").textContent = t("navTotp");
         document.getElementById("logout-text").textContent = t("logout");
         document.getElementById("send-text").textContent = t("send");
         document.getElementById("voice-support-text").textContent =
@@ -1419,6 +1536,19 @@
         setText("label-mic-gain", "micGain");
         setText("label-mic-stereo", "micStereo");
         setText("label-mic-rate", "micRate");
+        // TOTP labels
+        setText("totp-title", "totpTitle");
+        setText("totp-desc", "totpDesc");
+        setText("totp-enroll-heading", "totpEnrollHeading");
+        setText("totp-secret-label", "totpSecretLabel");
+        setText("totp-otpauth-label", "totpOtpauthLabel");
+        setText("totp-copy-text", "totpCopyText");
+        setText("totp-copy-otpauth-text", "totpCopyOtpauthText");
+        setText("totp-enroll-text", "totpEnrollText");
+        setText("totp-verify-heading", "totpVerifyHeading");
+        setText("totp-verify-desc", "totpVerifyDesc");
+        setText("totp-verify-text", "totpVerifyText");
+        setText("totp-note", "totpNote");
         const vt = document.getElementById("voice-support-text");
         if (vt) {
           vt.textContent =
@@ -1436,6 +1566,7 @@
         "memory",
         "workflows",
         "settings",
+        "totp",
       ];
       function showPage(page) {
         pages.forEach((p) => {
@@ -2174,6 +2305,140 @@
         });
         byId("dolby-test-btn").addEventListener("click", playDolbyPreview);
         byId("dolby-stop-btn").addEventListener("click", stopDolbyPlayback);
+
+        // ---------- TOTP enrollment & verification ----------
+        const totpEnrollBtn = byId("totp-enroll-btn");
+        const totpVerifyBtn = byId("totp-verify-btn");
+        const totpCopyBtn = byId("totp-copy-btn");
+        const totpCopyOtpauthBtn = byId("totp-copy-otpauth-btn");
+        const totpSecretInput = byId("totp-secret");
+        const totpOtpauthInput = byId("totp-otpauth");
+        const totpCodeInput = byId("totp-code");
+        const totpEnrollResult = byId("totp-enroll-result");
+        const totpVerifyResult = byId("totp-verify-result");
+
+        function showTotpResult(el, text, isError) {
+          el.textContent = text;
+          el.style.color = isError ? "#dc2626" : "#059669";
+          el.style.fontSize = "0.9rem";
+          el.style.fontWeight = "600";
+        }
+
+        async function enrollTotp() {
+          try {
+            const res = await fetch(API_BASE + "/auth/totp/enroll", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "X-API-Key": getApiKey(),
+                "Accept-Language": currentLanguage,
+              },
+            });
+            const data = await res.json();
+            if (!res.ok || !data.secret) {
+              showTotpResult(
+                totpEnrollResult,
+                data.detail ||
+                  (currentLanguage === "en"
+                    ? "Enrollment failed."
+                    : "فشل التسجيل."),
+                true
+              );
+              return;
+            }
+            totpSecretInput.value = data.secret;
+            totpOtpauthInput.value = data.otpauth_url;
+            showTotpResult(
+              totpEnrollResult,
+              currentLanguage === "en"
+                ? data.message_en
+                : data.message_ar,
+              false
+            );
+          } catch (e) {
+            showTotpResult(
+              totpEnrollResult,
+              "Error: " + e.message,
+              true
+            );
+          }
+        }
+
+        async function verifyTotp() {
+          const code = totpCodeInput.value.trim();
+          if (!/^\d{6}$/.test(code)) {
+            showTotpResult(
+              totpVerifyResult,
+              currentLanguage === "en"
+                ? "Please enter a 6-digit code."
+                : "الرجاء إدخال رمز من 6 أرقام.",
+              true
+            );
+            return;
+          }
+          try {
+            const res = await fetch(API_BASE + "/auth/totp/verify", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "X-API-Key": getApiKey(),
+                "Accept-Language": currentLanguage,
+              },
+              body: JSON.stringify({ code }),
+            });
+            const data = await res.json();
+            if (!res.ok || !data.success) {
+              showTotpResult(
+                totpVerifyResult,
+                data.detail ||
+                  (currentLanguage === "en"
+                    ? "Verification failed."
+                    : "فشل التحقق."),
+                true
+              );
+              return;
+            }
+            showTotpResult(
+              totpVerifyResult,
+              currentLanguage === "en"
+                ? data.message_en || "Verification successful!"
+                : data.message_ar || "تم التحقق بنجاح!",
+              false
+            );
+            totpCodeInput.value = "";
+          } catch (e) {
+            showTotpResult(
+              totpVerifyResult,
+              "Error: " + e.message,
+              true
+            );
+          }
+        }
+
+        totpEnrollBtn.onclick = enrollTotp;
+        totpVerifyBtn.onclick = verifyTotp;
+
+        totpCopyBtn.onclick = () => {
+          totpSecretInput.select();
+          document.execCommand("copy");
+          const orig = totpCopyBtn.textContent;
+          totpCopyBtn.textContent =
+            currentLanguage === "en" ? "Copied!" : "تم النسخ!";
+          setTimeout(() => {
+            totpCopyBtn.textContent = orig;
+          }, 1200);
+        };
+
+        totpCopyOtpauthBtn.onclick = () => {
+          totpOtpauthInput.select();
+          document.execCommand("copy");
+          const orig = totpCopyOtpauthBtn.textContent;
+          totpCopyOtpauthBtn.textContent =
+            currentLanguage === "en" ? "Copied!" : "تم النسخ!";
+          setTimeout(() => {
+            totpCopyOtpauthBtn.textContent = orig;
+          }, 1200);
+        };
       }
       bindDolbyControls();
       syncDolbyUI();
