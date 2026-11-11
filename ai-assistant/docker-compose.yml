@@ -82,7 +82,7 @@ services:
       API_SECRET_KEY: ${API_SECRET_KEY:?API_SECRET_KEY is required}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:?JWT_SECRET_KEY is required}
       DEFAULT_LLM_MODEL: gemma4:e2b
-      REASONING_LLM_MODEL: gemma4:e2b
+      REASONING_LLM_MODEL: deepseek-r1:14b
       LANGUAGE_DETECTION_MODEL: whisper-large-v3
     volumes:
       - ./orchestrator:/app/orchestrator

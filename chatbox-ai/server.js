@@ -42,8 +42,22 @@ app.post("/api/upload", upload.single("file"), (req, res) => {
 });
 
 app.post("/api/chat/stream", async (req, res) => {
-  const { message, lang = "en", model = DEFAULT_MODEL, file_path } = req.body;
+  const {
+    message,
+    lang = "en",
+    model = DEFAULT_MODEL,
+    file_path,
+    task_type: bodyTaskType,
+  } = req.body;
   if (!message) return res.status(400).json({ error: "Missing message" });
+
+  const taskType = bodyTaskType || "general";
+  const resolvedModel =
+    taskType === "reasoning"
+      ? "deepseek-r1:14b"
+      : taskType === "arabic"
+        ? "gemma4:e2b"
+        : model || DEFAULT_MODEL;
 
   const systemPrompts = {
     en: "You are a helpful AI assistant. Respond in English.",
@@ -75,7 +89,11 @@ app.post("/api/chat/stream", async (req, res) => {
     const ollamaRes = await fetch(`${OLLAMA_BASE}/api/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ model, messages: ollamaMessages, stream: true }),
+      body: JSON.stringify({
+        model: resolvedModel,
+        messages: ollamaMessages,
+        stream: true,
+      }),
     });
 
     if (!ollamaRes.ok || !ollamaRes.body) {
