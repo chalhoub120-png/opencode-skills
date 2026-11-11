@@ -105,7 +105,21 @@ def test_unknown_task_type_routes_by_keywords(monkeypatch):
         )
     )
 
-    assert calls == ["deepseek-r1:14b"]
+    assert calls == ["gemma4:e2b"]
+
+    # Auto-reasoning can be re-enabled for long messages.
+    monkeypatch.setenv("ROUTING_AUTO_REASONING", "1")
+    monkeypatch.setenv("ROUTING_MIN_REASONING_CHARS", "0")
+    calls2 = _wire(monkeypatch)
+    asyncio.run(
+        LLMRouter().generate_with_fallback(
+            _request(
+                message="prove this theorem step by step with full reasoning",
+                task_type="unknown",
+            )
+        )
+    )
+    assert calls2 == ["deepseek-r1:14b"]
 
 
 def test_unknown_arabic_task_stays_local(monkeypatch):
@@ -127,4 +141,4 @@ def test_empty_task_type_falls_back_to_keywords(monkeypatch):
         )
     )
 
-    assert calls == ["deepseek-r1:14b"]
+    assert calls == ["gemma4:e2b"]

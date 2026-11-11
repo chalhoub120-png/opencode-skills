@@ -42,7 +42,19 @@ def test_route_by_keywords_coding():
 
 def test_route_by_keywords_reasoning():
     router = LLMRouter()
-    assert router.route_by_keywords("حل المشكلة paso a paso") == TaskType.REASONING
+    # Auto-reasoning is off by default (deepseek-r1:14b is ~1.6 tok/s on CPU),
+    # so a short message routes to GENERAL instead of REASONING.
+    assert router.route_by_keywords("حل المشكلة paso a paso") == TaskType.GENERAL
+
+    import os
+
+    os.environ["ROUTING_AUTO_REASONING"] = "1"
+    os.environ["ROUTING_MIN_REASONING_CHARS"] = "0"
+    try:
+        assert router.route_by_keywords("حل المشكلة paso a paso") == TaskType.REASONING
+    finally:
+        os.environ.pop("ROUTING_AUTO_REASONING", None)
+        os.environ.pop("ROUTING_MIN_REASONING_CHARS", None)
 
 
 def test_route_by_keywords_security():

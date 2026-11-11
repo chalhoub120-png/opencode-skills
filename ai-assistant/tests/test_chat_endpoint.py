@@ -67,7 +67,7 @@ def test_chat_routes_unknown_task_by_keywords(monkeypatch):
     ).json()
 
     assert body["success"] is True
-    assert calls == ["deepseek-r1:14b"]
+    assert calls == ["gemma4:e2b"]
 
 
 def test_chat_reports_fallback(monkeypatch):
@@ -97,7 +97,7 @@ def test_chat_returns_error_when_all_models_fail(monkeypatch):
 def _fake_stream(monkeypatch, tokens=("Hel", "lo")):
     async def fake_chat_stream(self, model, messages, temperature=0.3, max_tokens=None):
         for token in tokens:
-            yield token
+            yield ("content", token)
 
     monkeypatch.setattr(OllamaClient, "chat_stream", fake_chat_stream)
 
