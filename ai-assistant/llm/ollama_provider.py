@@ -38,6 +38,7 @@ class OllamaProvider(BaseLLMProvider):
             "model": self.model,
             "prompt": request.message,
             "stream": False,
+            "keep_alive": os.getenv("OLLAMA_KEEP_ALIVE", "30m"),
             "options": {"temperature": request.temperature},
         }
         resp = await self._client.post(f"{self.base_url}/api/generate", json=payload)

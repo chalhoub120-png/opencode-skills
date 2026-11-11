@@ -41,6 +41,9 @@ class OllamaClient:
         )
         self.timeout = timeout
         self.max_retries = max_retries
+        # Keep the model resident between messages: a cold load costs ~7.5s for
+        # gemma4:e2b and ~18s for deepseek-r1:14b, which dwarfs short answers.
+        self.keep_alive = os.getenv("OLLAMA_KEEP_ALIVE", "30m")
         self._client: Optional[httpx.AsyncClient] = None
 
     async def _get_client(self) -> httpx.AsyncClient:
@@ -68,6 +71,7 @@ class OllamaClient:
             "model": model,
             "messages": messages,
             "stream": stream,
+            "keep_alive": self.keep_alive,
             "options": {
                 "temperature": temperature,
             },
@@ -120,6 +124,7 @@ class OllamaClient:
             "model": model,
             "messages": messages,
             "stream": True,
+            "keep_alive": self.keep_alive,
             "options": {
                 "temperature": temperature,
             },
@@ -135,9 +140,15 @@ class OllamaClient:
                 try:
                     data = json.loads(line)
                     message = data.get("message", {})
+                    # deepseek-r1 (and similar) emit reasoning in `thinking`
+                    # before the final `content`. Yield both so callers can show
+                    # progress instead of appearing frozen for minutes.
+                    thinking = message.get("thinking", "")
+                    if thinking:
+                        yield ("thinking", thinking)
                     content = message.get("content", "")
                     if content:
-                        yield content
+                        yield ("content", content)
                     if data.get("done", False):
                         break
                 except json.JSONDecodeError:
@@ -156,6 +167,7 @@ class OllamaClient:
             "model": model,
             "prompt": prompt,
             "stream": False,
+            "keep_alive": self.keep_alive,
             "options": {
                 "temperature": temperature,
             },

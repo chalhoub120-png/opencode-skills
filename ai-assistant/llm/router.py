@@ -6,9 +6,11 @@ from typing import Optional, Dict, Any, List
 import httpx
 import logging
 import os
+import re
 import json
 from enum import Enum
 from dataclasses import dataclass
+from functools import lru_cache
 
 
 # --- Task Type Enum ---
@@ -51,6 +53,146 @@ class LLMResponseSchema(BaseModel):
         default=None,
         description="Question to ask the user when clarification is needed",
     )
+
+
+# --- Keyword routing helpers ---
+
+# Tashkeel, Quranic marks and tatweel carry no routing meaning.
+_ARABIC_MARKS = re.compile(r"[\u0610-\u061a\u064b-\u065f\u0670\u06d6-\u06ed\u0640]")
+_ARABIC_FOLD = str.maketrans(
+    {"أ": "ا", "إ": "ا", "آ": "ا", "ٱ": "ا", "ى": "ي", "ئ": "ي", "ؤ": "و", "ة": "ه"}
+)
+_ARABIC_RANGE = re.compile(r"[\u0621-\u064a]")
+
+
+def _normalize_text(text: str) -> str:
+    """Lowercase and normalize Arabic so spelling variants match the same keyword."""
+    lowered = (text or "").lower()
+    return _ARABIC_MARKS.sub("", lowered).translate(_ARABIC_FOLD)
+
+
+@lru_cache(maxsize=256)
+def _keyword_pattern(keyword: str) -> "re.Pattern[str]":
+    """Build a boundary-aware pattern so `hi` does not match `this`.
+
+    Latin keywords: no letter before the keyword, and short keywords (<=3 chars)
+    also need a right boundary. Longer keywords match as prefixes, so `analyz`
+    covers `analyze`/`analysis` and `debug` covers `debugging`.
+
+    Arabic keywords: allow the common proclitics (و ب ل ك ف) and the article
+    (ال) before the word, since Arabic attaches them to the same word.
+    """
+    if _ARABIC_RANGE.search(keyword):
+        return re.compile(r"(?<![\u0621-\u064a])[وبلكف]{0,2}" + re.escape(keyword))
+    escaped = re.escape(keyword)
+    if len(keyword) <= 3:
+        return re.compile(r"(?<![a-z])" + escaped + r"(?![a-z])")
+    return re.compile(r"(?<![a-z])" + escaped)
+
+
+def _matches_any(text: str, keywords: tuple) -> bool:
+    """True when any keyword occurs in the already-normalized text."""
+    return any(_keyword_pattern(kw).search(text) for kw in keywords)
+
+
+# Keywords are stored normalized: no tashkeel, أإآ→ا, ى→ي, ة→ه.
+KEYWORD_TASKS: Dict[TaskType, tuple] = {
+    TaskType.SECURITY: (
+        "security",
+        "vulnerability",
+        "exploit",
+        "penetration",
+        "malware",
+        "ransomware",
+        "phishing",
+        "xss",
+        "sql injection",
+        "cve",
+        "امن",
+        "ثغره",
+        "اختراق",
+        "تشفير",
+        "قرصنه",
+    ),
+    TaskType.LEGAL: (
+        "legal",
+        "lawyer",
+        "lawsuit",
+        "contract",
+        "gdpr",
+        "compliance",
+        "قانون",
+        "عقد",
+        "محامي",
+        "قضيه",
+    ),
+    TaskType.CODING: (
+        "code",
+        "coding",
+        "program",
+        "script",
+        "function",
+        "python",
+        "javascript",
+        "typescript",
+        "sql",
+        "api",
+        "bug",
+        "debug",
+        "refactor",
+        "stack trace",
+        "كود",
+        "برمجه",
+        "سكريبت",
+        "داله",
+        "تصحيح",
+    ),
+    TaskType.REASONING: (
+        "analyz",
+        "analysis",
+        "reason",
+        "solve",
+        "prove",
+        "theorem",
+        "decision",
+        "trade-off",
+        "compare",
+        "evaluate",
+        "calculate",
+        "math",
+        "منطق",
+        "حل",
+        "مشكله",
+        "تحليل",
+        "قارن",
+        "احسب",
+    ),
+    TaskType.RESEARCH: (
+        "research",
+        "search the web",
+        "look up",
+        "sources",
+        "cite",
+        "paper",
+        "بحث",
+        "معلومه",
+        "مصدر",
+    ),
+    TaskType.GENERAL: (
+        "hello",
+        "hi",
+        "hey",
+        "thanks",
+        "what is",
+        "who is",
+        "where is",
+        "when is",
+        "مرحبا",
+        "اهلا",
+        "كيفك",
+        "شكرا",
+    ),
+}
 
 
 # --- LLMRouter Class ---
@@ -125,7 +267,7 @@ class LLMRouter:
     # Task -> default local Ollama model mappings.
     DEFAULT_MODELS: Dict[str, str] = {
         TaskType.CODING: "gemma4:e2b",
-        TaskType.REASONING: "deepseek-r1:14b",
+        TaskType.REASONING: os.getenv("AI_REASONING_MODEL", "deepseek-r1:14b"),
         TaskType.GENERAL: "gemma4:e2b",
         TaskType.AUTOMATION: "gemma4:e2b",
         TaskType.RESEARCH: "gemma4:e2b",
@@ -174,73 +316,33 @@ class LLMRouter:
         return self.TASK_TO_AGENT.get(task_type, "ceo")
 
     def route_by_keywords(self, message: str) -> TaskType:
-        """Heuristic task routing based on message content."""
-        text = message.lower()
-        security_kws = (
-            "security",
-            "vulnerability",
-            "penetration",
-            "audit",
-            "أمن",
-            "ثغرة",
-        )
-        legal_kws = ("legal", "law", "contract", "قانون", "عقد")
-        coding_kws = (
-            "code",
-            "script",
-            "function",
-            "python",
-            "bug",
-            "debug",
-            "refactor",
-            "كود",
-            "برمجة",
-            "تصحيح",
-            "سكريبت",
-            "دالة",
-        )
-        reasoning_kws = (
-            "analy",
-            "reason",
-            "solve",
-            "problem",
-            "decision",
-            "strategy",
-            "compare",
-            "evaluate",
-            "calculate",
-            "math",
-            "منطق",
-            "حل",
-            "مشكلة",
-        )
-        research_kws = ("research", "search", "web", "internet", "بحث", "معلومة")
-        general_kws = (
-            "hello",
-            "hi",
-            "how are you",
-            "what is",
-            "who is",
-            "where is",
-            "when is",
-            "why",
-            "مرحبا",
-            "أهلاً",
-            "كيفك",
-            "كيف حالك",
-        )
-        if any(kw in text for kw in security_kws):
-            return TaskType.SECURITY
-        if any(kw in text for kw in legal_kws):
-            return TaskType.LEGAL
-        if any(kw in text for kw in coding_kws):
-            return TaskType.CODING
-        if any(kw in text for kw in reasoning_kws):
-            return TaskType.REASONING
-        if any(kw in text for kw in research_kws):
-            return TaskType.RESEARCH
-        if any(kw in text for kw in general_kws):
+        """Route a message by keywords, with Arabic normalization and word boundaries.
+
+        Order is most-specific first: security, legal, coding, reasoning,
+        research, general. Reasoning is gated because `deepseek-r1:14b` runs at
+        ~1.6 tok/s on CPU-only hardware; auto-routing into it would turn a
+        one-line question into a multi-minute wait. Set `ROUTING_AUTO_REASONING=1`
+        to enable it (still subject to `ROUTING_MIN_REASONING_CHARS`).
+        """
+        text = _normalize_text(message)
+        if not text.strip():
             return TaskType.GENERAL
+
+        for task in (
+            TaskType.SECURITY,
+            TaskType.LEGAL,
+            TaskType.CODING,
+            TaskType.RESEARCH,
+            TaskType.GENERAL,
+        ):
+            if _matches_any(text, KEYWORD_TASKS[task]):
+                return task
+
+        if _matches_any(text, KEYWORD_TASKS[TaskType.REASONING]):
+            auto = os.getenv("ROUTING_AUTO_REASONING", "0") == "1"
+            min_chars = int(os.getenv("ROUTING_MIN_REASONING_CHARS", "60"))
+            if auto and len(message.strip()) >= min_chars:
+                return TaskType.REASONING
         return TaskType.GENERAL
 
     def validate_response(
@@ -340,7 +442,7 @@ class LLMRouter:
 app = FastAPI(title="AI Assistant Router", version="1.0.0")
 
 OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://127.0.0.1:11434")
-DEFAULT_MODEL = "deepseek-r1:14b"
+DEFAULT_MODEL = os.environ.get("DEFAULT_MODEL", "deepseek-r1:14b")
 
 
 class ChatRequest(BaseModel):
@@ -431,6 +533,13 @@ async def chat_stream_endpoint(request: StreamChatRequest):
     messages = _build_messages(request.message, request.language, request.file_path)
     client = OllamaClient(base_url=OLLAMA_BASE_URL)
 
+    # Cap output tokens: deepseek-r1:14b runs ~1.6 tok/s on CPU, so an
+    # uncapped reasoning answer can take minutes. Configurable via env.
+    if task == TaskType.REASONING:
+        max_tokens = int(os.getenv("AI_REASONING_MAX_TOKENS", "256"))
+    else:
+        max_tokens = int(os.getenv("AI_MAX_TOKENS", "1024"))
+
     def sse(payload: Any) -> str:
         return f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
 
@@ -440,9 +549,14 @@ async def chat_stream_endpoint(request: StreamChatRequest):
         )
         produced = False
         try:
-            async for token in client.chat_stream(model=model, messages=messages):
+            async for kind, text in client.chat_stream(
+                model=model, messages=messages, max_tokens=max_tokens
+            ):
                 produced = True
-                yield sse({"message": {"content": token}})
+                if kind == "thinking":
+                    yield sse({"thinking": text})
+                else:
+                    yield sse({"message": {"content": text}})
         except Exception as exc:  # noqa: BLE001 - fallback is the contract
             if produced:
                 yield sse({"error": str(exc)})

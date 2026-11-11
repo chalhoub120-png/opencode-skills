@@ -511,6 +511,20 @@
                       addMessage("ai", "خطأ: " + parsed.error);
                       return;
                     }
+                    if (parsed.thinking) {
+                      if (!aiMsg) aiMsg = addMessage("ai", "");
+                      let thinkEl = aiMsg.querySelector(".thinking");
+                      if (!thinkEl) {
+                        thinkEl = document.createElement("div");
+                        thinkEl.className = "thinking";
+                        thinkEl.style.cssText =
+                          "font-size:0.8rem;color:#94a3b8;font-style:italic;margin-bottom:0.4rem;white-space:pre-wrap;";
+                        aiMsg.querySelector(".bubble").before(thinkEl);
+                      }
+                      thinkEl.textContent += parsed.thinking;
+                      scrollBottom();
+                      continue;
+                    }
                     if (parsed.message?.content) {
                       if (!aiMsg) aiMsg = addMessage("ai", "");
                       aiMsg.querySelector(".bubble").textContent +=
