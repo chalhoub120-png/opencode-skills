@@ -1,224 +1,130 @@
-"""Tests for Claude -> Ollama fallback orchestration in LLMRouter.
+"""Tests for local model fallback orchestration in LLMRouter.
 
-No network: both providers are replaced with fakes.
+No network: every Ollama provider is replaced with a fake.
 """
 
 from __future__ import annotations
 
 import asyncio
 
+import pytest
+
 from llm.provider import LLMProviderType, LLMRequest, LLMResponse
 from llm.router import LLMRouter
 
 
-class _FakeClaude:
-    def __init__(self, *, available: bool = True, cost: float = 0.001, error=None):
-        self.available = available
-        self.cost = cost
-        self.error = error
-        self.calls = 0
+def _wire(monkeypatch, fail_models=()):
+    """Replace the provider factory and record which models were requested."""
+    calls = []
 
-    def is_available(self) -> bool:
-        return self.available
+    class FakeOllama:
+        def __init__(self, model):
+            self.model = model
 
-    def get_cost_estimate(self, tokens_in: int, tokens_out: int) -> float:
-        return self.cost
+        async def generate(self, request):
+            calls.append(self.model)
+            if self.model in fail_models:
+                raise RuntimeError(f"model {self.model} unavailable")
+            return LLMResponse(
+                answer=f"answer from {self.model}",
+                provider=LLMProviderType.OLLAMA,
+                model=self.model,
+                language=request.language,
+                cost_usd=0.0,
+            )
 
-    def should_fallback(self, cost_estimate: float, max_cost: float = 0.10) -> bool:
-        return cost_estimate > max_cost
-
-    async def generate(self, request: LLMRequest) -> LLMResponse:
-        self.calls += 1
-        if self.error is not None:
-            raise self.error
-        return LLMResponse(
-            answer="claude-answer",
-            provider=LLMProviderType.CLAUDE,
-            model="claude-opus-5-5",
-            language=request.language,
-        )
+    monkeypatch.setattr(
+        LLMRouter, "_ollama_provider", lambda self, model: FakeOllama(model)
+    )
+    return calls
 
 
-class _FakeOllama:
-    def __init__(self):
-        self.calls = 0
-
-    async def generate(self, request: LLMRequest) -> LLMResponse:
-        self.calls += 1
-        return LLMResponse(
-            answer="ollama-answer",
-            provider=LLMProviderType.OLLAMA,
-            model="local-model",
-            language=request.language,
-            cost_usd=0.0,
-        )
+def _request(**kwargs):
+    data = {"message": "hello", "language": "en", "task_type": "general"}
+    data.update(kwargs)
+    return LLMRequest(**data)
 
 
-def _wire(monkeypatch, router, claude, ollama):
-    """Attach fakes and record which local model was requested."""
-    models = []
-    router._claude = claude
-
-    def fake_ollama_provider(self, model):
-        models.append(model)
-        return ollama
-
-    monkeypatch.setattr(LLMRouter, "_ollama_provider", fake_ollama_provider)
-    return models
-
-
-def test_without_api_key_uses_ollama(monkeypatch):
-    router = LLMRouter()
-    claude = _FakeClaude(available=False)
-    ollama = _FakeOllama()
-    _wire(monkeypatch, router, claude, ollama)
-
+def test_reasoning_uses_deepseek(monkeypatch):
+    calls = _wire(monkeypatch)
     result = asyncio.run(
-        router.generate_with_fallback(
-            LLMRequest(message="solve it", language="en", task_type="reasoning")
-        )
+        LLMRouter().generate_with_fallback(_request(task_type="reasoning"))
     )
 
-    assert result.provider == LLMProviderType.OLLAMA
-    assert result.answer == "ollama-answer"
+    assert calls == ["deepseek-r1:14b"]
+    assert result.model == "deepseek-r1:14b"
     assert result.fallback_used is False
-    assert claude.calls == 0
 
 
-def test_complex_english_task_uses_claude(monkeypatch):
-    router = LLMRouter()
-    claude = _FakeClaude()
-    ollama = _FakeOllama()
-    _wire(monkeypatch, router, claude, ollama)
+def test_general_uses_gemma(monkeypatch):
+    calls = _wire(monkeypatch)
+    result = asyncio.run(LLMRouter().generate_with_fallback(_request()))
 
+    assert calls == ["gemma4:e2b"]
+    assert result.fallback_used is False
+
+
+def test_arabic_reasoning_stays_on_gemma(monkeypatch):
+    calls = _wire(monkeypatch)
     result = asyncio.run(
-        router.generate_with_fallback(
-            LLMRequest(message="solve it", language="en", task_type="reasoning")
+        LLMRouter().generate_with_fallback(
+            _request(message="حل المشكلة", language="ar", task_type="reasoning")
         )
     )
 
-    assert result.provider == LLMProviderType.CLAUDE
-    assert result.answer == "claude-answer"
-    assert ollama.calls == 0
+    assert calls == ["gemma4:e2b"]
+    assert result.model == "gemma4:e2b"
 
 
-def test_refusal_falls_back_to_ollama(monkeypatch):
-    router = LLMRouter()
-    claude = _FakeClaude(error=RuntimeError("Claude refused (category: cyber)"))
-    ollama = _FakeOllama()
-    _wire(monkeypatch, router, claude, ollama)
-
+def test_failure_retries_with_fallback_model(monkeypatch):
+    calls = _wire(monkeypatch, fail_models={"deepseek-r1:14b"})
     result = asyncio.run(
-        router.generate_with_fallback(
-            LLMRequest(message="solve it", language="en", task_type="reasoning")
-        )
+        LLMRouter().generate_with_fallback(_request(task_type="reasoning"))
     )
 
-    assert result.provider == LLMProviderType.OLLAMA
-    assert result.answer == "ollama-answer"
+    assert calls == ["deepseek-r1:14b", "gemma4:e2b"]
+    assert result.model == "gemma4:e2b"
+    assert result.answer == "answer from gemma4:e2b"
     assert result.fallback_used is True
-    assert claude.calls == 1
-    assert ollama.calls == 1
 
 
-def test_cost_over_limit_uses_ollama(monkeypatch):
-    router = LLMRouter()
-    claude = _FakeClaude(cost=0.50)
-    ollama = _FakeOllama()
-    _wire(monkeypatch, router, claude, ollama)
+def test_failure_without_lighter_model_raises(monkeypatch):
+    calls = _wire(monkeypatch, fail_models={"gemma4:e2b"})
 
-    result = asyncio.run(
-        router.generate_with_fallback(
-            LLMRequest(message="solve it", language="en", task_type="reasoning")
-        )
-    )
+    with pytest.raises(RuntimeError, match="unavailable"):
+        asyncio.run(LLMRouter().generate_with_fallback(_request()))
 
-    assert result.provider == LLMProviderType.OLLAMA
-    assert claude.calls == 0
+    assert calls == ["gemma4:e2b"]
 
 
-def test_explicit_cost_limit_skips_claude(monkeypatch):
-    router = LLMRouter(claude_max_cost=0.0005)
-    claude = _FakeClaude(cost=0.001)
-    ollama = _FakeOllama()
-    _wire(monkeypatch, router, claude, ollama)
-
+def test_unknown_task_type_routes_by_keywords(monkeypatch):
+    calls = _wire(monkeypatch)
     asyncio.run(
-        router.generate_with_fallback(
-            LLMRequest(message="solve it", language="en", task_type="reasoning")
+        LLMRouter().generate_with_fallback(
+            _request(message="solve this problem step by step", task_type="unknown")
         )
     )
 
-    assert claude.calls == 0
+    assert calls == ["deepseek-r1:14b"]
 
 
-def test_arabic_task_stays_local(monkeypatch):
-    router = LLMRouter()
-    claude = _FakeClaude()
-    ollama = _FakeOllama()
-    _wire(monkeypatch, router, claude, ollama)
-
-    result = asyncio.run(
-        router.generate_with_fallback(
-            LLMRequest(message="حل المشكلة", language="ar", task_type="reasoning")
-        )
-    )
-
-    assert result.provider == LLMProviderType.OLLAMA
-    assert claude.calls == 0
-
-
-def test_general_task_stays_local(monkeypatch):
-    router = LLMRouter()
-    claude = _FakeClaude()
-    ollama = _FakeOllama()
-    _wire(monkeypatch, router, claude, ollama)
-
-    result = asyncio.run(
-        router.generate_with_fallback(
-            LLMRequest(message="hello", language="en", task_type="general")
-        )
-    )
-
-    assert result.provider == LLMProviderType.OLLAMA
-    assert claude.calls == 0
-
-
-def test_local_model_follows_task_type(monkeypatch):
-    claude = _FakeClaude(available=False)
-    ollama = _FakeOllama()
-
-    reasoning_router = LLMRouter()
-    reasoning_models = _wire(monkeypatch, reasoning_router, claude, ollama)
+def test_unknown_arabic_task_stays_local(monkeypatch):
+    calls = _wire(monkeypatch)
     asyncio.run(
-        reasoning_router.generate_with_fallback(
-            LLMRequest(message="why", language="en", task_type="reasoning")
+        LLMRouter().generate_with_fallback(
+            _request(message="حل المشكلة", language="ar", task_type="unknown")
         )
     )
 
-    general_router = LLMRouter()
-    general_models = _wire(monkeypatch, general_router, claude, ollama)
+    assert calls == ["gemma4:e2b"]
+
+
+def test_empty_task_type_falls_back_to_keywords(monkeypatch):
+    calls = _wire(monkeypatch)
     asyncio.run(
-        general_router.generate_with_fallback(
-            LLMRequest(message="hello", language="en", task_type="general")
+        LLMRouter().generate_with_fallback(
+            _request(message="solve this problem", task_type="")
         )
     )
 
-    assert reasoning_models == ["deepseek-r1:14b"]
-    assert general_models == ["gemma4:e2b"]
-
-
-def test_unknown_task_type_does_not_crash(monkeypatch):
-    router = LLMRouter()
-    claude = _FakeClaude(available=False)
-    ollama = _FakeOllama()
-    models = _wire(monkeypatch, router, claude, ollama)
-
-    result = asyncio.run(
-        router.generate_with_fallback(
-            LLMRequest(message="hi", language="en", task_type="unknown-task")
-        )
-    )
-
-    assert result.provider == LLMProviderType.OLLAMA
-    assert models == [router.model]
+    assert calls == ["deepseek-r1:14b"]

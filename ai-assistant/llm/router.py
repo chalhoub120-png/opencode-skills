@@ -61,14 +61,11 @@ class LLMRouter:
         self,
         base_url: Optional[str] = None,
         model: str = "deepseek-r1:14b",
-        claude_max_cost: Optional[float] = None,
     ):
         self.base_url = base_url or os.getenv(
             "OLLAMA_BASE_URL", "http://127.0.0.1:11434"
         )
         self.model = model
-        self.claude_max_cost = claude_max_cost
-        self._claude = None
         self._ollama_providers: Dict[str, Any] = {}
 
     async def generate(
@@ -293,21 +290,14 @@ class LLMRouter:
             clarification_question=clarification_question,
         )
 
-    # --- Provider orchestration: Claude with Ollama fallback ---
+    # --- Provider orchestration: local model with local fallback ---
 
-    # Task types worth the paid Claude provider.
-    CLAUDE_TASKS: frozenset = frozenset({"reasoning", "complex", "analysis"})
-
-    # Arabic/Lebanese tasks stay on the local model.
-    ARABIC_LANGUAGES: frozenset = frozenset({"ar", "lb", "arabic"})
-
-    def _claude_provider(self):
-        """Return the cached ClaudeProvider (lazy, no network on creation)."""
-        from llm.claude_provider import ClaudeProvider
-
-        if self._claude is None:
-            self._claude = ClaudeProvider()
-        return self._claude
+    def _resolve_task(self, task_type: Optional[str], message: str = "") -> TaskType:
+        """Return a known TaskType, routing by keywords for unknown values."""
+        try:
+            return TaskType(task_type)
+        except (ValueError, TypeError):
+            return self.route_by_keywords(message or "")
 
     def _ollama_provider(self, model: str):
         """Return a cached OllamaProvider for the given local model."""
@@ -319,58 +309,31 @@ class LLMRouter:
             self._ollama_providers[model] = provider
         return provider
 
-    def _claude_cost_limit(self) -> float:
-        """Worst-case spend allowed for a single Claude request."""
-        if self.claude_max_cost is not None:
-            return self.claude_max_cost
-        return float(os.getenv("CLAUDE_MAX_COST_USD", "0.10"))
-
-    def _claude_allowed(self, request: Any, claude: Any) -> bool:
-        """Claude runs only for complex English tasks with a key and a safe cost."""
-        if str(request.language or "en").lower() in self.ARABIC_LANGUAGES:
-            return False
-        if request.task_type not in self.CLAUDE_TASKS:
-            return False
-        if not claude.is_available():
-            return False
-        estimated = claude.get_cost_estimate(
-            len(request.message) // 4, request.max_tokens
-        )
-        return not claude.should_fallback(estimated, self._claude_cost_limit())
-
     async def generate_with_fallback(self, request: Any):
-        """Generate with Claude when allowed, otherwise with local Ollama.
+        """Generate with the task-selected local model, retrying on a lighter one.
 
-        Claude is used only when an API key is configured, the task is a
-        complex English task, and the worst-case cost stays under the limit.
-        Any failure - network, auth, or a safety refusal - falls back to the
-        local Ollama model for the same request.
+        A heavy model (deepseek-r1:14b) can time out or be missing. When that
+        happens the request is retried once with `get_fallback(task)`, so a
+        single failing model cannot take the whole request down.
         """
-        model = self.model
+        task = self._resolve_task(request.task_type, request.message)
+        model = self.select_model(task, language=request.language)
+
         try:
-            task = TaskType(request.task_type)
-            model = self.select_model(task, language=request.language)
-        except ValueError:
-            pass
-
-        ollama = self._ollama_provider(model)
-        claude = self._claude_provider()
-        attempted_claude = False
-
-        if self._claude_allowed(request, claude):
-            attempted_claude = True
-            try:
-                return await claude.generate(request)
-            except Exception as exc:  # noqa: BLE001 - fallback is the contract
-                logging.getLogger(__name__).warning(
-                    "Claude provider failed (%s); falling back to Ollama model %s",
-                    type(exc).__name__,
-                    model,
-                )
-
-        response = await ollama.generate(request)
-        response.fallback_used = attempted_claude
-        return response
+            return await self._ollama_provider(model).generate(request)
+        except Exception as exc:  # noqa: BLE001 - fallback is the contract
+            fallback_model = self.get_fallback(task)
+            if fallback_model == model:
+                raise
+            logging.getLogger(__name__).warning(
+                "Local model %s failed (%s); retrying with %s",
+                model,
+                type(exc).__name__,
+                fallback_model,
+            )
+            response = await self._ollama_provider(fallback_model).generate(request)
+            response.fallback_used = True
+            return response
 
 
 # --- FastAPI App ---
@@ -386,39 +349,63 @@ class ChatRequest(BaseModel):
     task_type: str = "general"
 
 
-class ChatResponse(BaseModel):
-    success: bool
-    model: str
-    response: str
-    language: str
-    task_type: str
+class StreamChatRequest(BaseModel):
+    message: str
+    language: str = "en"
+    task_type: Optional[str] = None
+    file_path: Optional[str] = None
+
+
+# Same prompts the chat UI used when it talked to Ollama directly.
+SYSTEM_PROMPTS: Dict[str, str] = {
+    "en": "You are a helpful AI assistant. Respond in English.",
+    "ar": "أنت مساعد ذكي. أجب باللغة العربية الفصحى بوضوح ودقة.",
+    "lb": "أنت مساعد ذكي. أجب باللهجة اللبنانية ببساطة وطلاقة. استخدم كلمات شائعة في لبنان إذا لزم الأمر.",
+}
+
+
+def _build_messages(
+    message: str, language: str, file_path: Optional[str]
+) -> List[Dict[str, str]]:
+    """Build the chat messages for the local model."""
+    messages: List[Dict[str, str]] = [
+        {
+            "role": "system",
+            "content": SYSTEM_PROMPTS.get(language, SYSTEM_PROMPTS["en"]),
+        }
+    ]
+    if file_path:
+        messages.append(
+            {
+                "role": "user",
+                "content": f"The user uploaded a file: {file_path}. Analyze it and answer.",
+            }
+        )
+    messages.append({"role": "user", "content": message})
+    return messages
 
 
 @app.post("/chat")
 async def chat_endpoint(request: ChatRequest):
-    """Route tasks to the selected local Ollama model."""
-    try:
-        from llm.client import OllamaClient
+    """Route the task to a local model, falling back to a lighter one."""
+    from llm.provider import LLMRequest
 
-        client = OllamaClient(base_url=OLLAMA_BASE_URL)
-        task = (
-            TaskType(request.task_type)
-            if isinstance(request.task_type, TaskType)
-            else TaskType(request.task_type)
-        )
-        llm_router = LLMRouter()
-        model = llm_router.select_model(task, language=request.language)
-        response = await client.generate(
-            model=model,
-            prompt=request.message,
-            temperature=0.7,
+    llm_router = LLMRouter()
+    try:
+        response = await llm_router.generate_with_fallback(
+            LLMRequest(
+                message=request.message,
+                language=request.language,
+                task_type=request.task_type,
+            )
         )
         return {
             "success": True,
-            "model": model,
-            "answer": response.content,
+            "model": response.model,
+            "answer": response.answer,
             "language": request.language,
             "task_type": request.task_type,
+            "fallback_used": response.fallback_used,
         }
     except Exception as e:
         return {
@@ -427,7 +414,72 @@ async def chat_endpoint(request: ChatRequest):
             "answer": f"Error: {str(e)}",
             "language": request.language,
             "task_type": request.task_type,
+            "fallback_used": False,
         }
+
+
+@app.post("/chat/stream")
+async def chat_stream_endpoint(request: StreamChatRequest):
+    """Stream tokens as SSE, with one local fallback attempt on failure."""
+    from fastapi.responses import StreamingResponse
+    from llm.client import OllamaClient
+    from llm.provider import LLMRequest
+
+    llm_router = LLMRouter()
+    task = llm_router._resolve_task(request.task_type, request.message)
+    model = llm_router.select_model(task, language=request.language)
+    messages = _build_messages(request.message, request.language, request.file_path)
+    client = OllamaClient(base_url=OLLAMA_BASE_URL)
+
+    def sse(payload: Any) -> str:
+        return f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
+
+    async def events():
+        yield sse(
+            {"model": model, "task_type": task.value, "language": request.language}
+        )
+        produced = False
+        try:
+            async for token in client.chat_stream(model=model, messages=messages):
+                produced = True
+                yield sse({"message": {"content": token}})
+        except Exception as exc:  # noqa: BLE001 - fallback is the contract
+            if produced:
+                yield sse({"error": str(exc)})
+                yield "data: [DONE]\n\n"
+                return
+            fallback_model = llm_router.get_fallback(task)
+            if fallback_model == model:
+                yield sse({"error": str(exc)})
+                yield "data: [DONE]\n\n"
+                return
+            logging.getLogger(__name__).warning(
+                "Stream model %s failed (%s); retrying with %s",
+                model,
+                type(exc).__name__,
+                fallback_model,
+            )
+            yield sse({"fallback_model": fallback_model})
+            try:
+                response = await llm_router._ollama_provider(fallback_model).generate(
+                    LLMRequest(
+                        message=request.message,
+                        language=request.language,
+                        task_type=task.value,
+                    )
+                )
+                yield sse({"message": {"content": response.answer}})
+            except Exception as exc2:  # noqa: BLE001 - surface, do not crash
+                yield sse({"error": str(exc2)})
+        finally:
+            await client.close()
+        yield "data: [DONE]\n\n"
+
+    return StreamingResponse(
+        events(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 @app.get("/health")
@@ -453,6 +505,6 @@ __all__ = [
     "LanguageCode",
     "LLMResponseSchema",
     "ChatRequest",
-    "ChatResponse",
+    "StreamChatRequest",
     "app",
 ]

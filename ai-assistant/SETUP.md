@@ -91,22 +91,30 @@ $env:AI_API_BASE = "http://127.0.0.1:8000"
 
 ### LLM providers / مزوّدات النموذج
 
-Local Ollama is the primary provider and needs no key. Claude is optional and stays
-disabled while `ANTHROPIC_API_KEY` is empty. `LLMRouter.generate_with_fallback` uses
-Claude only for English `reasoning`/`complex`/`analysis` tasks whose worst-case cost
-stays under `CLAUDE_MAX_COST_USD`. Any Claude error or safety refusal falls back to the
-local model, and the response then carries `fallback_used=true`.
+Local Ollama is the only provider: no API key is required and nothing is sent to a
+paid service. `LLMRouter.select_model` picks the model per task (`reasoning` →
+`deepseek-r1:14b`, everything else → `gemma4:e2b`), and
+`generate_with_fallback` retries once with the lighter model when the selected one
+fails or times out.
 
-| Variable / المتغيّر    | Default / الافتراضي | Purpose / الغرض                                   |
-| --------------------- | ------------------- | ------------------------------------------------- |
-| `ANTHROPIC_API_KEY`   | empty / فارغ        | Enables Claude; empty keeps everything on Ollama  |
-| `CLAUDE_MAX_COST_USD` | `0.10`              | Per-request cost ceiling before Ollama takes over |
-| `OLLAMA_TIMEOUT`      | `300`               | Seconds to wait for a local model (cold start)    |
+| Variable / المتغيّر | Default / الافتراضي      | Purpose / الغرض                                |
+| ------------------ | ------------------------ | ---------------------------------------------- |
+| `OLLAMA_BASE_URL`  | `http://127.0.0.1:11434` | Ollama endpoint                                |
+| `OLLAMA_TIMEOUT`   | `300`                    | Seconds to wait for a local model (cold start) |
+| `AI_API_BASE`      | `http://127.0.0.1:8000`  | API base used by the chatbox proxy             |
 
-Ollama المحلي هو المزوّد الأساسي ولا يحتاج مفتاحًا. Claude اختياري ويبقى معطّلًا ما دام
-`ANTHROPIC_API_KEY` فارغًا. يستخدمه `generate_with_fallback` فقط لمهام إنجليزية
-(`reasoning`/`complex`/`analysis`) التي تبقى تكلفتها القصوى تحت `CLAUDE_MAX_COST_USD`.
-أي خطأ أو رفض أمان من Claude يعود إلى النموذج المحلي مع `fallback_used=true`.
+The chat UI (`chatbox-ai`) no longer talks to Ollama directly: `server.js` proxies
+`/api/chat/stream` to `POST /chat/stream` on this API, so task routing and the local
+fallback live in one place.
+
+النظام يعمل بالكامل على Ollama المحلي: بلا مفتاح، وبلا إرسال إلى مزوّد مدفوع.
+`select_model` يختار النموذج حسب المهمة (`reasoning` → `deepseek-r1:14b`، وما عداه
+`gemma4:e2b`)، و`generate_with_fallback` يعيد المحاولة مرة واحدة بالنموذج الأخف عند فشل
+النموذج المختار أو تجاوزه المهلة.
+
+واجهة الدردشة (`chatbox-ai`) لم تعد تخاطب Ollama مباشرة: `server.js` يمرّر
+`/api/chat/stream` إلى `POST /chat/stream` في هذا الـ API، فيصبح التوجيه والسقوط المحلي
+في مكان واحد.
 
 ## Step 4: Initialize Database / الخطوة 4: تهيئة قاعدة البيانات
 
