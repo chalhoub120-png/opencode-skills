@@ -68,6 +68,20 @@ This pulls: `qwen3:32b`, `deepseek-r1:32b`, `llama3.3`.
 
 > **ملاحظة:** قد يقوم `pull-models.py` بتنزيل ملفات كبيرة. راجع السكربت قبل تشغيله على قواعد بيانات غير تجريبية.
 
+### Ports / المنافذ
+
+| Mode / الوضع                 | URL                     | Notes / ملاحظات                                          |
+| ---------------------------- | ----------------------- | -------------------------------------------------------- |
+| Docker (`docker compose up`) | `http://127.0.0.1:8100` | `docker-compose.yml` maps host `8100` → container `8000` |
+| Local uvicorn (Step 3)       | `http://127.0.0.1:8000` | `python -m uvicorn api.main:app --port 8000`             |
+
+Verification scripts under `tests/` and `scripts/` default to `http://127.0.0.1:8100`
+(Docker mode). When the API runs locally on `8000`, start uvicorn on `8100`
+(`--port 8100`) so those scripts work unchanged.
+
+سكربتات التحقق في `tests/` و`scripts/` تفترض المنفذ `8100` (وضع Docker). عند تشغيل الـ API محليًا،
+شغّل uvicorn على المنفذ `8100` (`--port 8100`) لتعمل السكربتات دون تعديل.
+
 ## Step 4: Initialize Database / الخطوة 4: تهيئة قاعدة البيانات
 
 ```bash

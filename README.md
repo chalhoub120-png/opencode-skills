@@ -36,6 +36,11 @@
 
 - `REASONING → deepseek-r1:14b` (للمهام الإنجليزية)
 - باقي المهام → `gemma4:e2b` (للطلاقة العربية والسقوط الآمن)
+- **Claude API (اختياري)**: `claude-opus-5-5` مع `thinking: adaptive` — معطّل افتراضيًا، يُستخدم فقط عند ضبط `ANTHROPIC_API_KEY` ويسقط تلقائيًا إلى Ollama عند أي فشل أو تجاوز حد التكلفة.
+
+## الفحص الآلي (CI)
+
+`.github/workflows/ci.yml` يشغّل عند كل push/PR: `pytest` لحزمة `ai-assistant/tests/` و`node --check` لملفات `chatbox-ai`.
 
 ## المهارات المثبّتة (OpenCode)
 
