@@ -5,6 +5,8 @@ are handled in the dashboard UI layer via LABELS.
 """
 
 import httpx
+import os
+
 from .provider import BaseLLMProvider, LLMRequest, LLMResponse, LLMProviderType
 
 
@@ -23,7 +25,9 @@ class OllamaProvider(BaseLLMProvider):
             base_url = "http://" + base_url
         self.base_url = base_url.rstrip("/")
         self.model = model
-        self._client = httpx.AsyncClient(timeout=120.0)
+        # Local reasoning models can exceed 2 minutes on a cold load.
+        timeout = float(os.getenv("OLLAMA_TIMEOUT", "300"))
+        self._client = httpx.AsyncClient(timeout=timeout)
 
     async def generate(self, request: LLMRequest) -> LLMResponse:
         """Generate response using Ollama local API.

@@ -4,6 +4,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any, List
 import httpx
+import logging
 import os
 import json
 from enum import Enum
@@ -56,11 +57,19 @@ class LLMResponseSchema(BaseModel):
 class LLMRouter:
     """Routes tasks to Ollama models."""
 
-    def __init__(self, base_url: Optional[str] = None, model: str = "deepseek-r1:14b"):
+    def __init__(
+        self,
+        base_url: Optional[str] = None,
+        model: str = "deepseek-r1:14b",
+        claude_max_cost: Optional[float] = None,
+    ):
         self.base_url = base_url or os.getenv(
             "OLLAMA_BASE_URL", "http://127.0.0.1:11434"
         )
         self.model = model
+        self.claude_max_cost = claude_max_cost
+        self._claude = None
+        self._ollama_providers: Dict[str, Any] = {}
 
     async def generate(
         self, prompt: str, model: Optional[str] = None, temperature: float = 0.7
@@ -283,6 +292,85 @@ class LLMRouter:
             needs_clarification=needs_clarification,
             clarification_question=clarification_question,
         )
+
+    # --- Provider orchestration: Claude with Ollama fallback ---
+
+    # Task types worth the paid Claude provider.
+    CLAUDE_TASKS: frozenset = frozenset({"reasoning", "complex", "analysis"})
+
+    # Arabic/Lebanese tasks stay on the local model.
+    ARABIC_LANGUAGES: frozenset = frozenset({"ar", "lb", "arabic"})
+
+    def _claude_provider(self):
+        """Return the cached ClaudeProvider (lazy, no network on creation)."""
+        from llm.claude_provider import ClaudeProvider
+
+        if self._claude is None:
+            self._claude = ClaudeProvider()
+        return self._claude
+
+    def _ollama_provider(self, model: str):
+        """Return a cached OllamaProvider for the given local model."""
+        from llm.ollama_provider import OllamaProvider
+
+        provider = self._ollama_providers.get(model)
+        if provider is None:
+            provider = OllamaProvider(base_url=self.base_url, model=model)
+            self._ollama_providers[model] = provider
+        return provider
+
+    def _claude_cost_limit(self) -> float:
+        """Worst-case spend allowed for a single Claude request."""
+        if self.claude_max_cost is not None:
+            return self.claude_max_cost
+        return float(os.getenv("CLAUDE_MAX_COST_USD", "0.10"))
+
+    def _claude_allowed(self, request: Any, claude: Any) -> bool:
+        """Claude runs only for complex English tasks with a key and a safe cost."""
+        if str(request.language or "en").lower() in self.ARABIC_LANGUAGES:
+            return False
+        if request.task_type not in self.CLAUDE_TASKS:
+            return False
+        if not claude.is_available():
+            return False
+        estimated = claude.get_cost_estimate(
+            len(request.message) // 4, request.max_tokens
+        )
+        return not claude.should_fallback(estimated, self._claude_cost_limit())
+
+    async def generate_with_fallback(self, request: Any):
+        """Generate with Claude when allowed, otherwise with local Ollama.
+
+        Claude is used only when an API key is configured, the task is a
+        complex English task, and the worst-case cost stays under the limit.
+        Any failure - network, auth, or a safety refusal - falls back to the
+        local Ollama model for the same request.
+        """
+        model = self.model
+        try:
+            task = TaskType(request.task_type)
+            model = self.select_model(task, language=request.language)
+        except ValueError:
+            pass
+
+        ollama = self._ollama_provider(model)
+        claude = self._claude_provider()
+        attempted_claude = False
+
+        if self._claude_allowed(request, claude):
+            attempted_claude = True
+            try:
+                return await claude.generate(request)
+            except Exception as exc:  # noqa: BLE001 - fallback is the contract
+                logging.getLogger(__name__).warning(
+                    "Claude provider failed (%s); falling back to Ollama model %s",
+                    type(exc).__name__,
+                    model,
+                )
+
+        response = await ollama.generate(request)
+        response.fallback_used = attempted_claude
+        return response
 
 
 # --- FastAPI App ---

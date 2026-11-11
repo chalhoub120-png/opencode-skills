@@ -89,6 +89,25 @@ $env:AI_API_BASE = "http://127.0.0.1:8000"
 $env:AI_API_BASE = "http://127.0.0.1:8000"
 ```
 
+### LLM providers / مزوّدات النموذج
+
+Local Ollama is the primary provider and needs no key. Claude is optional and stays
+disabled while `ANTHROPIC_API_KEY` is empty. `LLMRouter.generate_with_fallback` uses
+Claude only for English `reasoning`/`complex`/`analysis` tasks whose worst-case cost
+stays under `CLAUDE_MAX_COST_USD`. Any Claude error or safety refusal falls back to the
+local model, and the response then carries `fallback_used=true`.
+
+| Variable / المتغيّر    | Default / الافتراضي | Purpose / الغرض                                   |
+| --------------------- | ------------------- | ------------------------------------------------- |
+| `ANTHROPIC_API_KEY`   | empty / فارغ        | Enables Claude; empty keeps everything on Ollama  |
+| `CLAUDE_MAX_COST_USD` | `0.10`              | Per-request cost ceiling before Ollama takes over |
+| `OLLAMA_TIMEOUT`      | `300`               | Seconds to wait for a local model (cold start)    |
+
+Ollama المحلي هو المزوّد الأساسي ولا يحتاج مفتاحًا. Claude اختياري ويبقى معطّلًا ما دام
+`ANTHROPIC_API_KEY` فارغًا. يستخدمه `generate_with_fallback` فقط لمهام إنجليزية
+(`reasoning`/`complex`/`analysis`) التي تبقى تكلفتها القصوى تحت `CLAUDE_MAX_COST_USD`.
+أي خطأ أو رفض أمان من Claude يعود إلى النموذج المحلي مع `fallback_used=true`.
+
 ## Step 4: Initialize Database / الخطوة 4: تهيئة قاعدة البيانات
 
 ```bash
