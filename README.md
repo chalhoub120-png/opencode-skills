@@ -6,6 +6,7 @@
 
 | المشروع                     | النوع                | الوصف                                                                                                              |
 | --------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `boardspace-app/`           | React + TypeScript   | تطبيق Boardspace الفعّال — Vite، Supabase Auth، مساحات عمل ولوحات ببيانات علائقية محمية بـRLS                        |
 | `ai-assistant/`             | Python               | المساعد الذكي الرئيسي — LLM Router، API، لوحة تحكم، وكلاء، معرفة، ذاكرة، TOTP، اختبارات أمنية                      |
 | `trader-skill/`             | Python               | مهارات التداول — 11 وحدة (تنبيهات، محلل، سمسار، ميزان، نسخ تداول، أخبار، Pelosi، إعادة موازنة، مراقبة، مسح، ضرائب) |
 | `chatbox-ai/`               | Node.js              | تطبيق دردشة على Express مع واجهة أمامية وصفحة هبوط مدمجة                                                           |
@@ -59,3 +60,45 @@ MIT License — راجع ملف LICENSE في الجذر أو في المجلدا
 - تم حذف `_vendor-skills/` من الجذر (منقول إلى `archive/_vendor-skills-archive/`)
 - تم حذف المجلدات المكررة من الأرشيف: `trader-skill-src`, `supermarkets`, `my-scraper-clone-skills`
 - تم حذف ملفات `.bak` الاحتياطية من `ai-assistant/` وجذر المشروع
+
+## تطبيق Boardspace الفعّال
+
+النسخة النشطة هي تطبيق React + TypeScript داخل `boardspace-app/`. الصفحة الجذرية `index.html` هي صفحة تعليمات المستودع وليست واجهة التطبيق. النموذج الثابت السابق محفوظ، دون حذف، في `legacy-boardspace/` لأغراض التصدير والمراجعة؛ لا تشغّله بالتوازي بوصفه النسخة الأساسية.
+
+### التشغيل المحلي
+
+```bash
+cd boardspace-app
+npm ci
+cp .env.example .env.local
+# اضبط VITE_SUPABASE_URL وVITE_SUPABASE_PUBLISHABLE_KEY في .env.local
+npm run dev
+```
+
+ثم افتح عنوان Vite الذي يظهر في الطرفية. مفاتيح `VITE_*` عامة وتصل إلى المتصفح؛ استخدم Publishable key فقط، ولا تضع `service_role` أو أي سر فيها. عنوان الموقع وRedirect URLs في Supabase Auth يجب أن يطابقا بيئة التطوير أو النشر.
+
+### المعمارية
+
+- `src/domain.ts` — أنواع المجال والتحقق النقي.
+- `src/features/auth/` — المصادقة.
+- `src/features/workspaces/` — اختيار مساحة العمل وrepository الخاص بها.
+- `src/features/boards/` — قراءة اللوحات والكتابة المشروطة برقم المراجعة.
+- `src/lib/supabase.ts` — إعداد العميل.
+- `src/components/ErrorBoundary.tsx` — حدّ أخطاء العرض.
+- `supabase/migrations/` — مخطط علائقي وRLS وRPC لإنشاء مساحة بداية.
+
+### الوظائف المنفذة
+
+تسجيل ودخول بالبريد، إنشاء مساحة عمل مع لوحة تجريبية، إنشاء اللوحات والقوائم والبطاقات، إكمال البطاقة ونقلها، حذف اللوحة بصلاحية المالك/المشرف، RLS حسب الدور، وتعارض تعديل البطاقة عبر revision. صلاحيات الدعوات وتغيير العضوية غير مفعّلة بعد عمداً؛ سياسات الكتابة على `workspace_members` مغلقة حتى بناء تدفق دعوة موثوق.
+
+### الاختبار والبناء
+
+```bash
+cd boardspace-app
+npm test
+npm run typecheck
+npm run build
+npm audit
+```
+
+التقرير التفصيلي للتنفيذ: `TECHNICAL_ENGINEERING_REPORT.md`. خطة إعادة البناء ومراحل التنفيذ: `REBUILD_PLAN_AR.md`. لا تُرحّل بيانات النموذج القديم تلقائياً؛ صدّرها أولاً ثم نفّذ backfill مصادقاً عليه ومختبراً.

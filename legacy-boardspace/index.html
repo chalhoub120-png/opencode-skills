@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="A focused Kanban workspace with boards, tasks, team assignments, and optional secure cloud sync." />
+    <title>Boardspace — Kanban workspace</title>
+    <link rel="stylesheet" href="assets/css/app.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="logo">Boardspace</div>
+      <div class="boards-switch" id="boardsSwitch"></div>
+      <div class="cloud-auth-wrap"><div id="cloudAuth" aria-label="Account controls"></div><span id="cloudStatus" role="status" aria-live="polite">Local mode</span></div>
+      <div class="top-actions">
+        <input
+          id="searchInput"
+          class="search"
+          placeholder="Search..."
+          aria-label="Search cards"
+        />
+        <select
+          id="labelFilter"
+          class="filter-select"
+          aria-label="Filter by label"
+        >
+          <option value="">All labels</option>
+        </select>
+        <button id="membersBtn" class="board-pill" title="Manage members">
+          Members
+        </button>
+        <div class="dropdown">
+          <button id="menuBtn" class="board-pill">Menu ▾</button>
+          <div id="boardMenu" class="menu">
+            <button data-action="add-board">+ Create new board</button>
+            <button data-action="duplicate">Duplicate board</button>
+            <button data-action="export">Export board JSON</button>
+            <button data-action="import">Import JSON</button>
+            <button data-action="reset" class="danger">
+              Reset workspace
+            </button>
+          </div>
+        </div>
+        <button id="createBoardBtn" class="board-pill">+ Create Board</button>
+      </div>
+    </header>
+
+    <div class="subbar">
+      <span>★</span>
+      <input
+        id="boardTitle"
+        class="board-title"
+        maxlength="120"
+        value="My Board"
+        aria-label="Board title"
+      />
+      <span id="cardCount" style="opacity: 0.9"></span>
+      <span style="flex: 1"></span>
+      <span id="topMembers" style="display: flex; gap: 6px"></span>
+      <label
+        style="display: flex; align-items: center; gap: 6px; font-size: 13px"
+        >Show archived <input type="checkbox" id="showArchived"
+      /></label>
+    </div>
+
+    <div class="layout">
+      <aside class="sidebar">
+        <h3>Your boards</h3>
+        <div id="sidebarBoards"></div>
+        <h3>Members</h3>
+        <div id="sidebarMembers"></div>
+        <button
+          id="addMemberBtn"
+          class="board-pill"
+          style="width: 100%; margin-top: 8px"
+        >
+          + Add member
+        </button>
+      </aside>
+      <main id="board" class="board" aria-label="Board"></main>
+    </div>
+
+    <div id="cardModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-hidden="true">
+      <div class="modal"><div id="modalBody"></div></div>
+    </div>
+    <div id="toast" class="toast"></div>
+    <input type="file" id="importFile" accept=".json" hidden />
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.js" defer></script>
+    <script src="assets/js/supabase-config.js" defer></script>
+    <script src="assets/js/cloud.js" defer></script>
+    <script src="assets/js/app.js" defer></script>
+  </body>
+</html>
