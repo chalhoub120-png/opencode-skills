@@ -37,9 +37,25 @@ async def run_one_level(level: int, api_key: str, model: str):
         tasks = [_one(c, api_key, f"say hi {i}", model) for i in range(level)]
         results = await asyncio.gather(*tasks)
     ok = sum(1 for r in results if r["status"] == 200)
-    avg = round(sum(r["ms"] for r in results) / max(1, len(results)))
     errs = sum(1 for r in results if r["status"] != 200)
-    return {"level": level, "ok": ok, "errs": errs, "avg_ms": avg, "details": results}
+    ms = sorted(r["ms"] for r in results)
+
+    def pct(p):
+        if not ms:
+            return 0
+        idx = max(0, min(len(ms) - 1, int(round((p / 100) * (len(ms) - 1)))))
+        return ms[idx]
+
+    avg = round(sum(ms) / max(1, len(ms)))
+    return {
+        "level": level,
+        "ok": ok,
+        "errs": errs,
+        "avg_ms": avg,
+        "p50_ms": pct(50),
+        "p95_ms": pct(95),
+        "details": results,
+    }
 
 
 async def main():
@@ -55,7 +71,8 @@ async def main():
     for lvl in levels:
         res = await run_one_level(lvl, args.api_key, args.model)
         print(
-            f"  level {lvl}: ok={res['ok']} errs={res['errs']} avg_ms={res['avg_ms']}"
+            f"  level {lvl}: ok={res['ok']} errs={res['errs']} "
+            f"avg_ms={res['avg_ms']} p50_ms={res['p50_ms']} p95_ms={res['p95_ms']}"
         )
     print(
         "DONE: no GPU, no 40-request claim. Record avg_ms per level as CPU-only baseline."
