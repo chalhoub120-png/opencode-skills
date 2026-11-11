@@ -328,6 +328,26 @@
         <div class="chat-header">
           <h2 id="chat-title">محادثة جديدة</h2>
           <p>تواصل مع نموذج الذكاء الاصطناعي</p>
+          <label
+            style="
+              display: inline-flex;
+              gap: 0.5rem;
+              align-items: center;
+              margin-top: 0.5rem;
+              font-size: 0.85rem;
+              color: #94a3b8;
+            "
+          >
+            <span>نوع المهمة</span>
+            <select id="task-select">
+              <option value="general" selected>عام</option>
+              <option value="reasoning">استدلال</option>
+              <option value="coding">برمجة</option>
+              <option value="research">بحث</option>
+              <option value="security">أمن</option>
+              <option value="legal">قانون</option>
+            </select>
+          </label>
         </div>
 
         <div class="messages" id="messages">
@@ -374,8 +394,10 @@
         const uploadName = document.getElementById("upload-name");
         const removeFileBtn = document.getElementById("remove-file");
         const attachBtn = document.getElementById("attach-btn");
+        const taskSelect = document.getElementById("task-select");
         let selectedFile = null;
         let isSending = false;
+        let currentLang = "en";
 
         document
           .getElementById("lang-switcher")
@@ -386,6 +408,7 @@
                 .querySelectorAll(".lang-btn")
                 .forEach((b) => b.classList.remove("active"));
               btn.classList.add("active");
+              currentLang = btn.dataset.lang || "en";
             };
           });
 
@@ -451,8 +474,8 @@
               body: JSON.stringify({
                 conversationId: Date.now(),
                 message: text,
-                lang: "ar",
-                model: "gemma4:e2b",
+                lang: currentLang,
+                task_type: taskSelect ? taskSelect.value : "general",
                 file_path: selectedFile || null,
               }),
             });
@@ -474,7 +497,12 @@
               buffer = lines.pop() || "";
               for (const line of lines) {
                 const trimmed = line.trim();
-                if (!trimmed || trimmed === "[DONE]") continue;
+                if (
+                  !trimmed ||
+                  trimmed === "[DONE]" ||
+                  trimmed === "data: [DONE]"
+                )
+                  continue;
                 if (trimmed.startsWith("data: ")) {
                   try {
                     const parsed = JSON.parse(trimmed.slice(6));

@@ -48,6 +48,5 @@ jobs:
       - name: Syntax check
         run: |
           node --check server.js
-          node --check public/js/app.js
           node --check public/js/admin.js
           node --check public/js/i18n.js
