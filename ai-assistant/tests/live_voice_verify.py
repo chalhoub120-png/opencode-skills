@@ -27,7 +27,7 @@ if hasattr(sys.stdout, "reconfigure"):
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-BASE = "http://127.0.0.1:8100"
+BASE = os.getenv("AI_API_BASE", "http://127.0.0.1:8100")
 results: list[tuple[str, str, str]] = []  # (test, status, detail)
 
 
@@ -270,7 +270,7 @@ print(f"  FAIL: {failed}/{total}")
 print(f"  DOCUMENTED (requires API key): {documented}/{total}")
 print()
 print("LIVE REALITY ASSESSMENT:")
-print("  - Server is running and healthy on 127.0.0.1:8100")
+print(f"  - Server is running and healthy on {BASE}")
 print(
     "  - Voice models are present on disk (Whisper medium/small, Piper Arabic Kareem)"
 )

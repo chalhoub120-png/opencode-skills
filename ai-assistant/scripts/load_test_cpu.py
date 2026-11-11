@@ -7,10 +7,11 @@ Usage: .\\.venv\\Scripts\\python.exe scripts/load_test_cpu.py --concurrency 1,2,
 
 import argparse
 import asyncio
+import os
 import time
 import httpx
 
-BASE_URL = "http://127.0.0.1:8100"
+BASE_URL = os.getenv("AI_API_BASE", "http://127.0.0.1:8100")
 
 
 async def _one(client: httpx.AsyncClient, api_key: str, prompt: str, model: str):

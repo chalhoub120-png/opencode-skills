@@ -10,7 +10,7 @@ Usage:
     python scripts/test_voice_live.py <audio_file.wav> [language]
 
 Prerequisites:
-- ai-orchestrator running on 127.0.0.1:8100
+- ai-orchestrator running (default http://127.0.0.1:8100, override with AI_API_BASE)
 - A valid API key (set via AI_ASSISTANT_API_KEY env var or edit API_KEY below)
 """
 
@@ -29,7 +29,7 @@ from pathlib import Path
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
-API_BASE = "http://127.0.0.1:8100"
+API_BASE = os.getenv("AI_API_BASE", "http://127.0.0.1:8100")
 # ---------------------------------------------------------------------------
 # SET YOUR API KEY HERE (or export AI_ASSISTANT_API_KEY before running)
 # ---------------------------------------------------------------------------

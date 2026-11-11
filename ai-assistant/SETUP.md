@@ -75,12 +75,19 @@ This pulls: `qwen3:32b`, `deepseek-r1:32b`, `llama3.3`.
 | Docker (`docker compose up`) | `http://127.0.0.1:8100` | `docker-compose.yml` maps host `8100` → container `8000` |
 | Local uvicorn (Step 3)       | `http://127.0.0.1:8000` | `python -m uvicorn api.main:app --port 8000`             |
 
-Verification scripts under `tests/` and `scripts/` default to `http://127.0.0.1:8100`
-(Docker mode). When the API runs locally on `8000`, start uvicorn on `8100`
-(`--port 8100`) so those scripts work unchanged.
+Verification scripts under `tests/` and `scripts/` read `AI_API_BASE` and default to
+`http://127.0.0.1:8100` (Docker mode). To run them against a local uvicorn on `8000`:
 
-سكربتات التحقق في `tests/` و`scripts/` تفترض المنفذ `8100` (وضع Docker). عند تشغيل الـ API محليًا،
-شغّل uvicorn على المنفذ `8100` (`--port 8100`) لتعمل السكربتات دون تعديل.
+```powershell
+$env:AI_API_BASE = "http://127.0.0.1:8000"
+```
+
+سكربتات التحقق في `tests/` و`scripts/` تقرأ `AI_API_BASE` وقيمتها الافتراضية `http://127.0.0.1:8100`
+(وضع Docker). لتشغيلها مقابل uvicorn محلي على `8000`:
+
+```powershell
+$env:AI_API_BASE = "http://127.0.0.1:8000"
+```
 
 ## Step 4: Initialize Database / الخطوة 4: تهيئة قاعدة البيانات
 

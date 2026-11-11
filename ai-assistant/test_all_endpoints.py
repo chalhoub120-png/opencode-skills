@@ -1,6 +1,8 @@
 import urllib.request, json
+import os
 
-BASE_URL = "http://127.0.0.1:8100"
+# Override with AI_API_BASE when the API is not on the default Docker port.
+BASE_URL = os.getenv("AI_API_BASE", "http://127.0.0.1:8100")
 API_KEY = os.getenv("API_KEY", "")
 
 
