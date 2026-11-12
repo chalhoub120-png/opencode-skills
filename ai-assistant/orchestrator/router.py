@@ -607,100 +607,102 @@ class OpenCodeOrchestrator:
     async def route_to_n8n(
         self,
         user_id: str,
-        workflow_id: str,
         payload: Dict[str, Any],
+        webhook_path: Optional[str] = None,
         conversation_id: Optional[str] = None,
     ) -> OrchestrationResult:
-        """Route a task to an n8n workflow for automation."""
-        # workflow_id is interpolated into a URL path. Restrict to a safe slug
-        # so user input cannot alter the endpoint.
-        if not re.fullmatch(r"[A-Za-z0-9_-]+", workflow_id or ""):
-            return OrchestrationResult(
-                success=False,
-                answer="",
-                language="ar",
-                agent_used=None,
-                route_decision=RouteDecision(
-                    target=RouteTarget.N8N_WORKFLOW,
-                    target_name=workflow_id,
-                    confidence=1.0,
-                    reasoning="Invalid workflow_id",
-                    task_type=TaskType.AUTOMATION,
-                    model="",
-                ),
-                execution_time_ms=0.0,
-                error="Invalid workflow_id",
-            )
+        """Trigger an n8n workflow through its webhook endpoint.
+
+        n8n's public REST API has no endpoint that executes a workflow by id,
+        so the workflow is triggered through the webhook registered for it.
+        """
+        path = (webhook_path or self._get_n8n_webhook_path()).strip("/")
+        # The path is interpolated into a URL. Restrict it to a safe slug so
+        # user input cannot alter the endpoint.
+        if not re.fullmatch(r"[A-Za-z0-9._-]+", path):
+            return self._n8n_failure(path, "Invalid webhook path", 0.0)
+
+        # user_id is authoritative: the webhook rejects payloads without it.
+        body = {**payload, "user_id": user_id}
         start_time = datetime.now(timezone.utc)
 
         await self.audit.log(
             user_id=user_id,
             action="n8n_workflow",
             resource="workflow",
-            resource_id=workflow_id,
+            resource_id=path,
             metadata={"payload_keys": list(payload.keys())},
         )
 
-        # n8n execution would be handled by the n8n adapter tool
         from tools.rest import RESTTool
 
         rest_tool = RESTTool(base_url=self._get_n8n_base_url())
         try:
-            response = await rest_tool.post(
-                path=f"/api/v1/workflows/{workflow_id}/execute",
-                json_body=payload,
-                headers={"X-N8N-API-KEY": self._get_n8n_api_key()},
-            )
+            result = await rest_tool.post(path=f"/webhook/{path}", json_body=body)
         except Exception as exc:
-            execution_time_ms = (
-                datetime.now(timezone.utc) - start_time
-            ).total_seconds() * 1000
-            return OrchestrationResult(
-                success=False,
-                answer="",
-                language="ar",
-                agent_used=None,
-                route_decision=RouteDecision(
-                    target=RouteTarget.N8N_WORKFLOW,
-                    target_name=workflow_id,
-                    confidence=1.0,
-                    reasoning="n8n workflow execution",
-                    task_type=TaskType.AUTOMATION,
-                    model="",
-                ),
-                execution_time_ms=execution_time_ms,
-                error=str(exc),
-            )
+            return self._n8n_failure(path, str(exc), self._elapsed_ms(start_time))
+        finally:
+            await rest_tool.close()
 
-        execution_time_ms = (
-            datetime.now(timezone.utc) - start_time
-        ).total_seconds() * 1000
+        execution_time_ms = self._elapsed_ms(start_time)
+        status = result.get("status")
+        error = result.get("error")
+        if error or (isinstance(status, int) and status >= 400):
+            reason = error or f"n8n webhook returned HTTP {status}"
+            return self._n8n_failure(path, reason, execution_time_ms)
+
+        response_body = result.get("body", {})
         return OrchestrationResult(
             success=True,
-            answer=json.dumps(response, ensure_ascii=False),
+            answer=json.dumps(response_body, ensure_ascii=False),
             language="ar",
             agent_used=None,
             route_decision=RouteDecision(
                 target=RouteTarget.N8N_WORKFLOW,
-                target_name=workflow_id,
+                target_name=path,
                 confidence=1.0,
                 reasoning="n8n workflow executed successfully",
                 task_type=TaskType.AUTOMATION,
                 model="",
             ),
-            tool_results=[{"workflow": workflow_id, "response": response}],
+            tool_results=[{"workflow": path, "response": response_body}],
             execution_time_ms=execution_time_ms,
         )
+
+    def _n8n_failure(
+        self, path: str, error: str, execution_time_ms: float
+    ) -> OrchestrationResult:
+        """Build a failed orchestration result for an n8n webhook call."""
+        return OrchestrationResult(
+            success=False,
+            answer="",
+            language="ar",
+            agent_used=None,
+            route_decision=RouteDecision(
+                target=RouteTarget.N8N_WORKFLOW,
+                target_name=path,
+                confidence=1.0,
+                reasoning="n8n workflow execution failed",
+                task_type=TaskType.AUTOMATION,
+                model="",
+            ),
+            execution_time_ms=execution_time_ms,
+            error=error,
+        )
+
+    @staticmethod
+    def _elapsed_ms(start_time: datetime) -> float:
+        return (datetime.now(timezone.utc) - start_time).total_seconds() * 1000
 
     def _get_n8n_base_url(self) -> str:
         import os
 
         return os.getenv("N8N_BASE_URL", "http://localhost:5679")
 
-    def _get_n8n_api_key(self) -> str:
+    def _get_n8n_webhook_path(self) -> str:
         import os
 
-        return os.getenv("N8N_API_KEY", "")
+        return os.getenv("N8N_NOTIFY_WEBHOOK", "notify-webhook")
 
     async def _retrieve_memory(
         self,

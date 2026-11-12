@@ -1,104 +1,103 @@
 {
+  "id": "rozoKSaEiX51IEpB",
   "name": "Notifications",
   "nodes": [
     {
       "parameters": {
         "httpMethod": "POST",
         "path": "notify-webhook",
-        "responseMode": "onReceived"
+        "responseMode": "lastNode",
+        "options": {}
       },
-      "id": "webhook",
+      "id": "a1b2c3d4-0001-4000-8000-000000000001",
       "name": "Notification Webhook",
       "type": "n8n-nodes-base.webhook",
-      "typeVersion": 1,
-      "position": [240, 300]
+      "typeVersion": 2,
+      "position": [0, 0],
+      "webhookId": "notify-webhook-ai"
     },
     {
       "parameters": {
-        "rule": "time",
-        "time": "60000",
-        "operation": "deduplicate"
+        "mode": "runOnceForAllItems",
+        "jsCode": "const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;\nconst out = [];\nfor (const item of $input.all()) {\n  const body = item.json.body ?? item.json;\n  const userId = body.user_id;\n  const message = body.message;\n  if (typeof userId !== 'string' || !UUID_RE.test(userId)) {\n    throw new Error('user_id must be a UUID');\n  }\n  if (typeof message !== 'string' || message.trim() === '') {\n    throw new Error('message must be a non-empty string');\n  }\n  out.push({\n    json: {\n      user_id: userId,\n      message: message.trim(),\n      type: typeof body.type === 'string' ? body.type : 'info',\n      channel: typeof body.channel === 'string' ? body.channel : 'in_app',\n      received_at: new Date().toISOString()\n    }\n  });\n}\nreturn out;"
       },
-      "id": "dedup",
-      "name": "Duplicate Protection",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
-      "position": [460, 300]
+      "id": "a1b2c3d4-0002-4000-8000-000000000002",
+      "name": "Validate Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [280, 0]
     },
     {
       "parameters": {
-        "operation": "append",
-        "table": "notifications",
-        "data": {
-          "user_id": "={{ $json.user_id }}",
-          "message": "={{ $json.message }}",
-          "type": "={{ $json.type || 'info' }}",
-          "channel": "={{ $json.channel || 'in_app' }}",
-          "read": false
+        "resource": "database",
+        "operation": "insert",
+        "schema": {
+          "__rl": true,
+          "mode": "name",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "name",
+          "value": "notifications"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "user_id": "={{ $json.user_id }}",
+            "message": "={{ $json.message }}",
+            "type": "={{ $json.type }}",
+            "channel": "={{ $json.channel }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {
+          "outputColumns": ["*"]
         }
       },
-      "id": "storeNotification",
-      "name": "Store Notification",
+      "id": "a1b2c3d4-0003-4000-8000-000000000003",
+      "name": "Insert Notification",
       "type": "n8n-nodes-base.postgres",
-      "typeVersion": 1,
-      "position": [680, 300],
-      "credentials": { "postgres": "postgres-cred" },
-      "retryOnFail": true,
-      "maxRetries": 3,
-      "retryWait": 5000
-    },
-    {
-      "parameters": {
-        "operation": "create",
-        "table": "audit_logs",
-        "data": {
-          "user_id": "={{ $json.user_id }}",
-          "action": "notification:sent",
-          "resource": "notification",
-          "metadata": {
-            "type": "={{ $json.type || 'info' }}",
-            "channel": "={{ $json.channel || 'in_app' }}"
-          }
+      "typeVersion": 2.8,
+      "position": [560, 0],
+      "credentials": {
+        "postgres": {
+          "id": "cYKmuMgnZzw3mfam",
+          "name": "Postgres account"
         }
       },
-      "id": "auditLog",
-      "name": "Audit Log Notification",
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 1,
-      "position": [900, 300],
-      "credentials": { "postgres": "postgres-cred" }
-    },
-    {
-      "parameters": {
-        "channel": "={{ $json.channel || 'telegram' }}",
-        "chatId": "={{ $json.chat_id }}",
-        "text": "={{ $json.message }}"
-      },
-      "id": "sendNotification",
-      "name": "Send Notification",
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1,
-      "position": [1120, 300],
-      "credentials": { "telegram": "telegram-cred" },
       "retryOnFail": true,
-      "maxRetries": 3,
-      "retryWait": 5000
+      "maxTries": 3,
+      "waitBetweenTries": 2000
     }
   ],
   "connections": {
-    "Duplicate Protection": {
-      "main": [[{ "node": "Store Notification", "type": "main", "index": 0 }]]
-    },
-    "Store Notification": {
+    "Notification Webhook": {
       "main": [
-        [{ "node": "Audit Log Notification", "type": "main", "index": 0 }],
-        [{ "node": "Send Notification", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Validate Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
-    "Notification Webhook": {
-      "main": [[{ "node": "Duplicate Protection", "type": "main", "index": 0 }]]
+    "Validate Payload": {
+      "main": [
+        [
+          {
+            "node": "Insert Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
-  "settings": {},
-  "id": "notifications-workflow"
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false
 }
