@@ -10,7 +10,7 @@ import asyncio
 import pytest
 
 from llm.provider import LLMProviderType, LLMRequest, LLMResponse
-from llm.router import LLMRouter
+from llm.router import LLMRouter, TaskType
 
 
 def _wire(monkeypatch, fail_models=()):
@@ -89,12 +89,15 @@ def test_failure_retries_with_fallback_model(monkeypatch):
 
 
 def test_failure_without_lighter_model_raises(monkeypatch):
-    calls = _wire(monkeypatch, fail_models={"gemma4:e2b"})
+    # "No lighter model" means every model in the chain has failed: a single
+    # broken model is now handled by falling through to the next one.
+    chain = LLMRouter().get_model_chain(TaskType.GENERAL, language="en")
+    calls = _wire(monkeypatch, fail_models=set(chain))
 
     with pytest.raises(RuntimeError, match="unavailable"):
         asyncio.run(LLMRouter().generate_with_fallback(_request()))
 
-    assert calls == ["gemma4:e2b"]
+    assert calls == chain
 
 
 def test_unknown_task_type_routes_by_keywords(monkeypatch):

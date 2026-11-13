@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 import os
-import time
-from collections import defaultdict
 from functools import lru_cache
 from typing import Any, Dict, Optional
 
@@ -53,7 +51,16 @@ def get_db_manager() -> DatabaseManager:
 def get_auth_manager() -> AuthManager:
     global _auth
     if _auth is None:
-        _auth = AuthManager(get_db_manager())
+        try:
+            _auth = AuthManager(get_db_manager())
+        except Exception as exc:  # noqa: BLE001 - a broken env must be explicit
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=(
+                    "Authentication is not configured correctly "
+                    f"({type(exc).__name__}). Set DATABASE_URL and JWT_SECRET_KEY."
+                ),
+            ) from exc
     return _auth
 
 
@@ -158,24 +165,31 @@ def get_voice_pipeline() -> VoicePipeline:
 # Authentication dependency (moved here so voice.py can import it)
 # ---------------------------------------------------------------------------
 
-# Rate limiting (simple sliding window, per API key)
-RATE_LIMIT_REQUESTS = 60
-RATE_LIMIT_WINDOW = 60.0
-_rate_limit_state: Dict[str, list[float]] = defaultdict(list)
+# The sliding-window rate limiter lives in `security.rate_limit` so the chat
+# path can use it without importing this module (which would create an import
+# cycle with `llm.router`).
+from security.rate_limit import (  # noqa: E402
+    RATE_LIMIT_REQUESTS,
+    RATE_LIMIT_WINDOW,
+    rate_limit_check,
+)
 
-
-def rate_limit_check(api_key: str) -> None:
-    """Simple sliding-window rate limiter. Raises HTTPException 429 on limit."""
-    now = time.time()
-    window_start = now - RATE_LIMIT_WINDOW
-    timestamps = _rate_limit_state[api_key]
-    _rate_limit_state[api_key] = [t for t in timestamps if t > window_start]
-    if len(_rate_limit_state[api_key]) >= RATE_LIMIT_REQUESTS:
-        raise HTTPException(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="Rate limit exceeded. Try again later.",
-        )
-    _rate_limit_state[api_key].append(now)
+__all__ = [
+    "RATE_LIMIT_REQUESTS",
+    "RATE_LIMIT_WINDOW",
+    "rate_limit_check",
+    "get_db_manager",
+    "get_auth_manager",
+    "get_rbac_manager",
+    "get_audit_logger",
+    "get_ollama_client",
+    "get_llm_router",
+    "get_knowledge_store",
+    "get_distributed_inference",
+    "get_orchestrator",
+    "get_voice_pipeline",
+    "get_current_user",
+]
 
 
 async def get_current_user(

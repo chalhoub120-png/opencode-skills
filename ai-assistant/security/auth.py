@@ -49,6 +49,9 @@ class AuthManager:
         expire = now + timedelta(minutes=self.access_token_expire_minutes)
         payload = {
             "sub": user_id,
+            # `id` mirrors `sub` so a client can read the user id without
+            # knowing the claim convention.
+            "id": user_id,
             "role": role,
             "iat": now,
             "exp": expire,

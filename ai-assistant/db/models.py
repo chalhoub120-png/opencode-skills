@@ -164,6 +164,160 @@ class DatabaseManager:
             return None
         return self._row_to_dict(row)
 
+    async def get_user_by_username(self, username: str) -> Optional[Dict[str, Any]]:
+        """Fetch a user including the password hash (login path only)."""
+        async with self._acquire() as conn:
+            row = await conn.fetchrow(
+                """
+                SELECT id, username, email, password_hash, role,
+                       language_preference, is_active
+                FROM users WHERE username = $1
+                """,
+                username,
+            )
+        if not row:
+            return None
+        return self._row_to_dict(row)
+
+    async def list_users(
+        self, limit: int = 50, offset: int = 0
+    ) -> List[Dict[str, Any]]:
+        """List users for the admin panel (never returns password hashes)."""
+        async with self._acquire() as conn:
+            rows = await conn.fetch(
+                """
+                SELECT id, username, email, role, language_preference,
+                       is_active, created_at
+                FROM users ORDER BY created_at DESC LIMIT $1 OFFSET $2
+                """,
+                limit,
+                offset,
+            )
+        return [self._row_to_dict(row) for row in rows]
+
+    async def update_user_role(self, user_id: str, role: str) -> bool:
+        """Change a user's role. Returns False when the user does not exist."""
+        async with self._acquire() as conn:
+            result = await conn.execute(
+                "UPDATE users SET role = $2 WHERE id = $1", user_id, role
+            )
+        return result.endswith("1")
+
+    async def set_user_active(self, user_id: str, is_active: bool) -> bool:
+        """Activate or deactivate a user. Returns False when it does not exist."""
+        async with self._acquire() as conn:
+            result = await conn.execute(
+                "UPDATE users SET is_active = $2 WHERE id = $1", user_id, is_active
+            )
+        return result.endswith("1")
+
+    async def delete_user(self, user_id: str) -> bool:
+        """Delete a user and everything that cascades from it."""
+        async with self._acquire() as conn:
+            result = await conn.execute("DELETE FROM users WHERE id = $1", user_id)
+        return result.endswith("1")
+
+    async def list_conversations(
+        self, limit: int = 50, offset: int = 0
+    ) -> List[Dict[str, Any]]:
+        """List conversations with their owner for the admin panel.
+
+        `updated_at` is the last message time, falling back to the creation
+        time, so the panel can show real activity instead of a copy of
+        `created_at`.
+        """
+        async with self._acquire() as conn:
+            rows = await conn.fetch(
+                """
+                SELECT c.id, c.user_id, c.project_id, c.title, c.language,
+                       c.created_at,
+                       COALESCE(m.last_activity, c.created_at) AS updated_at,
+                       COALESCE(u.username, '') AS username,
+                       COALESCE(u.email, '') AS email
+                FROM conversations c
+                LEFT JOIN users u ON u.id = c.user_id
+                LEFT JOIN LATERAL (
+                    SELECT max(created_at) AS last_activity
+                    FROM messages WHERE conversation_id = c.id
+                ) m ON TRUE
+                ORDER BY c.created_at DESC LIMIT $1 OFFSET $2
+                """,
+                limit,
+                offset,
+            )
+        return [self._row_to_dict(row) for row in rows]
+
+    async def list_notifications(
+        self,
+        user_id: str,
+        unread_only: bool = False,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> List[Dict[str, Any]]:
+        """List one user's notifications, newest first.
+
+        n8n is the only writer; this read path never inserts rows.
+        """
+        async with self._acquire() as conn:
+            rows = await conn.fetch(
+                """
+                SELECT id, user_id, message, type, channel, read, metadata,
+                       created_at
+                FROM notifications
+                WHERE user_id = $1
+                  AND (NOT $2 OR read = FALSE)
+                ORDER BY created_at DESC LIMIT $3 OFFSET $4
+                """,
+                user_id,
+                unread_only,
+                limit,
+                offset,
+            )
+        return [self._row_to_dict(row) for row in rows]
+
+    async def mark_notification_read(self, notification_id: str, user_id: str) -> bool:
+        """Mark one of the user's notifications as read.
+
+        Scoping the update by ``user_id`` stops one user from touching another
+        user's rows.
+        """
+        async with self._acquire() as conn:
+            result = await conn.execute(
+                """
+                UPDATE notifications SET read = TRUE
+                WHERE id = $1 AND user_id = $2
+                """,
+                notification_id,
+                user_id,
+            )
+        return result.endswith("1")
+
+    async def delete_conversation(self, conversation_id: str) -> bool:
+        """Delete a conversation and its messages."""
+        async with self._acquire() as conn:
+            result = await conn.execute(
+                "DELETE FROM conversations WHERE id = $1", conversation_id
+            )
+        return result.endswith("1")
+
+    async def get_stats(self) -> Dict[str, int]:
+        """Counts for the admin dashboard."""
+        async with self._acquire() as conn:
+            row = await conn.fetchrow(
+                """
+                SELECT
+                    (SELECT count(*) FROM users)        AS users,
+                    (SELECT count(*) FROM users WHERE is_active) AS active_users,
+                    (SELECT count(*) FROM users WHERE role = 'admin') AS admins,
+                    (SELECT count(*) FROM conversations) AS conversations,
+                    (SELECT count(*) FROM messages)      AS messages,
+                    (SELECT count(*) FROM memories)      AS memories,
+                    (SELECT count(*) FROM documents)     AS documents,
+                    (SELECT count(*) FROM audit_logs)    AS audit_logs
+                """
+            )
+        return {key: int(row[key]) for key in row.keys()}
+
     # ------------------------------------------------------------------
     # Conversations
     # ------------------------------------------------------------------

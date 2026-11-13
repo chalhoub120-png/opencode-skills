@@ -1,6 +1,6 @@
 """LLM Router - connects frontend to Ollama deepseek-r1:14b model"""
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any, List
 import httpx
@@ -11,6 +11,9 @@ import json
 from enum import Enum
 from dataclasses import dataclass
 from functools import lru_cache
+
+from llm import model_config
+from security.chat_auth import get_optional_user
 
 
 # --- Task Type Enum ---
@@ -265,9 +268,12 @@ class LLMRouter:
     }
 
     # Task -> default local Ollama model mappings.
+    # These are the built-in defaults; `llm.model_config` overrides them from
+    # the environment so a missing or broken model can be swapped without a
+    # code change.
     DEFAULT_MODELS: Dict[str, str] = {
         TaskType.CODING: "gemma4:e2b",
-        TaskType.REASONING: os.getenv("AI_REASONING_MODEL", "deepseek-r1:14b"),
+        TaskType.REASONING: "deepseek-r1:14b",
         TaskType.GENERAL: "gemma4:e2b",
         TaskType.AUTOMATION: "gemma4:e2b",
         TaskType.RESEARCH: "gemma4:e2b",
@@ -286,30 +292,88 @@ class LLMRouter:
         TaskType.LEGAL: "gemma4:e2b",
     }
 
+    # Task -> fallback local Ollama model mappings.
+    # A fallback that equals the primary model is no fallback at all: one
+    # broken local model would take the whole endpoint down. Every entry
+    # therefore names a different model than its primary.
     FALLBACK_MODELS: Dict[str, str] = {
-        TaskType.CODING: "gemma4:e2b",
+        TaskType.CODING: "deepseek-r1:14b",
         TaskType.REASONING: "gemma4:e2b",
-        TaskType.GENERAL: "gemma4:e2b",
-        TaskType.AUTOMATION: "gemma4:e2b",
-        TaskType.RESEARCH: "gemma4:e2b",
-        TaskType.SECURITY: "gemma4:e2b",
-        TaskType.LEGAL: "gemma4:e2b",
+        TaskType.GENERAL: "deepseek-r1:14b",
+        TaskType.AUTOMATION: "deepseek-r1:14b",
+        TaskType.RESEARCH: "deepseek-r1:14b",
+        TaskType.SECURITY: "deepseek-r1:14b",
+        TaskType.LEGAL: "deepseek-r1:14b",
     }
 
     def _task_key(self, task_type: TaskType) -> TaskType:
         return task_type if isinstance(task_type, TaskType) else TaskType(task_type)
 
+    @classmethod
+    def known_models(cls) -> List[str]:
+        """Every distinct model this router knows about, in preference order."""
+        seen: List[str] = []
+        for table in (cls.DEFAULT_MODELS, cls.ARABIC_MODELS, cls.FALLBACK_MODELS):
+            for model in table.values():
+                if model not in seen:
+                    seen.append(model)
+        return seen
+
     def select_model(self, task_type: TaskType, language: str = "en") -> str:
-        """Select the local Ollama model for a task type and language."""
+        """Select the local Ollama model for a task type and language.
+
+        The environment wins over the built-in table (see `llm.model_config`).
+        """
         task = self._task_key(task_type)
-        if str(language or "en") in ("ar", "lb", "arabic"):
+        override = model_config.env_primary(task.value, language)
+        if override:
+            return override
+        if str(language or "en") in model_config.ARABIC_LANGUAGES:
             return self.ARABIC_MODELS.get(task, self.ARABIC_MODELS[TaskType.GENERAL])
         return self.DEFAULT_MODELS.get(task, self.DEFAULT_MODELS[TaskType.GENERAL])
 
-    def get_fallback(self, task_type: TaskType) -> str:
-        """Get the fallback model for a task type."""
+    def get_fallback(self, task_type: TaskType, language: str = "en") -> str:
+        """Get the fallback model for a task type (never the primary model).
+
+        Language matters: the Arabic table prefers gemma4, so a fallback
+        computed from the English table could equal the Arabic primary.
+        """
         task = self._task_key(task_type)
-        return self.FALLBACK_MODELS.get(task, self.FALLBACK_MODELS[TaskType.GENERAL])
+        primary = self.select_model(task, language=language)
+        override = model_config.env_fallback(task.value)
+        candidate = override or self.FALLBACK_MODELS.get(
+            task, self.FALLBACK_MODELS[TaskType.GENERAL]
+        )
+        if candidate != primary:
+            return candidate
+        # The configured fallback is the same model as the primary, so hand
+        # back any other known model instead of a no-op fallback.
+        for model in self.known_models():
+            if model != primary:
+                return model
+        return candidate
+
+    def get_model_chain(self, task_type: TaskType, language: str = "en") -> List[str]:
+        """Ordered models to try for a task, primary first.
+
+        The chain always holds at least two distinct models, so a broken local
+        model (a partially downloaded blob answers 404) degrades to the next
+        one instead of failing the request.
+        """
+        task = self._task_key(task_type)
+        chain: List[str] = [self.select_model(task, language=language)]
+
+        fallback = self.get_fallback(task, language=language)
+        if fallback not in chain:
+            chain.append(fallback)
+
+        # Last resorts: any other known model, so the chain survives an
+        # environment that points both the primary and the fallback at the
+        # same (possibly broken) model.
+        for model in self.known_models():
+            if model not in chain:
+                chain.append(model)
+        return chain
 
     def get_agent_for_task(self, task_type: str) -> str:
         """Return the agent name for a task type."""
@@ -412,30 +476,32 @@ class LLMRouter:
         return provider
 
     async def generate_with_fallback(self, request: Any):
-        """Generate with the task-selected local model, retrying on a lighter one.
+        """Generate with the task-selected local model, walking the model chain.
 
-        A heavy model (deepseek-r1:14b) can time out or be missing. When that
-        happens the request is retried once with `get_fallback(task)`, so a
-        single failing model cannot take the whole request down.
+        A heavy model (deepseek-r1:14b) can time out, and a partially
+        downloaded model answers 404. Walking the chain means a single failing
+        model cannot take the whole request down.
         """
         task = self._resolve_task(request.task_type, request.message)
-        model = self.select_model(task, language=request.language)
+        chain = self.get_model_chain(task, language=request.language)
+        logger = logging.getLogger(__name__)
 
-        try:
-            return await self._ollama_provider(model).generate(request)
-        except Exception as exc:  # noqa: BLE001 - fallback is the contract
-            fallback_model = self.get_fallback(task)
-            if fallback_model == model:
-                raise
-            logging.getLogger(__name__).warning(
-                "Local model %s failed (%s); retrying with %s",
-                model,
-                type(exc).__name__,
-                fallback_model,
-            )
-            response = await self._ollama_provider(fallback_model).generate(request)
-            response.fallback_used = True
+        last_error: Optional[Exception] = None
+        for index, model in enumerate(chain):
+            try:
+                response = await self._ollama_provider(model).generate(request)
+            except Exception as exc:  # noqa: BLE001 - the chain is the contract
+                last_error = exc
+                logger.warning(
+                    "Local model %s failed (%s); trying the next model in the chain",
+                    model,
+                    type(exc).__name__,
+                )
+                continue
+            response.fallback_used = index > 0
             return response
+
+        raise last_error or RuntimeError("No local model is available")
 
 
 # --- FastAPI App ---
@@ -487,10 +553,87 @@ def _build_messages(
     return messages
 
 
+_UUID_PATTERN = re.compile(
+    r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-"
+    r"[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
+)
+
+
+async def _try_notification(
+    message: str,
+    language: str,
+    user: Dict[str, Any],
+) -> Optional[Dict[str, Any]]:
+    """Persist an explicit notification request instead of answering it.
+
+    Returns ``None`` when the message is not a notification request, so the
+    chat path keeps its normal behaviour. Anonymous callers (the ``local``
+    user) cannot own a notification and also fall through to the model.
+    """
+    user_id = str((user or {}).get("id") or "")
+    if not _UUID_PATTERN.fullmatch(user_id):
+        return None
+
+    try:
+        # Imported lazily: the orchestrator imports this module, and the chat
+        # path must keep working on a machine without the optional services.
+        from orchestrator.router import TaskClassifier
+    except Exception as exc:  # noqa: BLE001 - optional dependency
+        logger.warning("Notification routing unavailable: %s", exc)
+        return None
+
+    task_type, _ = TaskClassifier.classify(message, language, {})
+    if not TaskClassifier.is_notification_request(message, task_type):
+        return None
+
+    from api.deps import get_orchestrator
+
+    result = await get_orchestrator().route_to_n8n(
+        user_id=user_id,
+        payload={
+            "message": message,
+            "type": "notification",
+            "channel": "in_app",
+        },
+    )
+    if not result.success:
+        # Answering with the model here would hide a rejected notification.
+        return {
+            "success": False,
+            "model": "n8n",
+            "answer": f"Error: {result.error}",
+            "language": language,
+            "task_type": "automation",
+            "fallback_used": False,
+        }
+
+    stored = (result.tool_results or [{}])[0].get("response", {})
+    return {
+        "success": True,
+        "model": "n8n",
+        "answer": (
+            "تم حفظ الإشعار بنجاح."
+            if language.startswith("ar")
+            else "Notification saved."
+        ),
+        "language": language,
+        "task_type": "automation",
+        "fallback_used": False,
+        "notification": stored,
+    }
+
+
 @app.post("/chat")
-async def chat_endpoint(request: ChatRequest):
-    """Route the task to a local model, falling back to a lighter one."""
+async def chat_endpoint(
+    request: ChatRequest,
+    user: Dict[str, Any] = Depends(get_optional_user),
+):
+    """Route the task to a local model, walking the model chain on failure."""
     from llm.provider import LLMRequest
+
+    notification = await _try_notification(request.message, request.language, user)
+    if notification is not None:
+        return notification
 
     llm_router = LLMRouter()
     try:
@@ -521,15 +664,19 @@ async def chat_endpoint(request: ChatRequest):
 
 
 @app.post("/chat/stream")
-async def chat_stream_endpoint(request: StreamChatRequest):
-    """Stream tokens as SSE, with one local fallback attempt on failure."""
+async def chat_stream_endpoint(
+    request: StreamChatRequest,
+    user: Dict[str, Any] = Depends(get_optional_user),
+):
+    """Stream tokens as SSE, walking the model chain when a model fails."""
     from fastapi.responses import StreamingResponse
     from llm.client import OllamaClient
     from llm.provider import LLMRequest
 
     llm_router = LLMRouter()
     task = llm_router._resolve_task(request.task_type, request.message)
-    model = llm_router.select_model(task, language=request.language)
+    chain = llm_router.get_model_chain(task, language=request.language)
+    model = chain[0]
     messages = _build_messages(request.message, request.language, request.file_path)
     client = OllamaClient(base_url=OLLAMA_BASE_URL)
 
@@ -548,45 +695,56 @@ async def chat_stream_endpoint(request: StreamChatRequest):
             {"model": model, "task_type": task.value, "language": request.language}
         )
         produced = False
+        last_error: Optional[str] = None
         try:
-            async for kind, text in client.chat_stream(
-                model=model, messages=messages, max_tokens=max_tokens
-            ):
-                produced = True
-                if kind == "thinking":
-                    yield sse({"thinking": text})
-                else:
-                    yield sse({"message": {"content": text}})
-        except Exception as exc:  # noqa: BLE001 - fallback is the contract
-            if produced:
-                yield sse({"error": str(exc)})
-                yield "data: [DONE]\n\n"
-                return
-            fallback_model = llm_router.get_fallback(task)
-            if fallback_model == model:
-                yield sse({"error": str(exc)})
-                yield "data: [DONE]\n\n"
-                return
-            logging.getLogger(__name__).warning(
-                "Stream model %s failed (%s); retrying with %s",
-                model,
-                type(exc).__name__,
-                fallback_model,
-            )
-            yield sse({"fallback_model": fallback_model})
-            try:
-                response = await llm_router._ollama_provider(fallback_model).generate(
-                    LLMRequest(
-                        message=request.message,
-                        language=request.language,
-                        task_type=task.value,
+            for index, candidate in enumerate(chain):
+                if index > 0:
+                    # The chain moved on: tell the client which model is now
+                    # answering so the UI can show it.
+                    yield sse({"fallback_model": candidate})
+                try:
+                    if index == 0:
+                        # The primary model streams.
+                        async for kind, text in client.chat_stream(
+                            model=candidate, messages=messages, max_tokens=max_tokens
+                        ):
+                            produced = True
+                            if kind == "thinking":
+                                yield sse({"thinking": text})
+                            else:
+                                yield sse({"message": {"content": text}})
+                    else:
+                        # A fallback that has to be retried after a broken
+                        # stream is delivered in one piece: resuming a stream
+                        # that already failed halfway is not possible.
+                        response = await llm_router._ollama_provider(
+                            candidate
+                        ).generate(
+                            LLMRequest(
+                                message=request.message,
+                                language=request.language,
+                                task_type=task.value,
+                            )
+                        )
+                        yield sse({"message": {"content": response.answer}})
+                    last_error = None
+                    break
+                except Exception as exc:  # noqa: BLE001 - the chain is the contract
+                    last_error = str(exc)
+                    if produced:
+                        # Tokens already reached the client: restarting would
+                        # duplicate output, so report the error and stop.
+                        break
+                    logging.getLogger(__name__).warning(
+                        "Stream model %s failed (%s); trying the next model in the chain",
+                        candidate,
+                        type(exc).__name__,
                     )
-                )
-                yield sse({"message": {"content": response.answer}})
-            except Exception as exc2:  # noqa: BLE001 - surface, do not crash
-                yield sse({"error": str(exc2)})
         finally:
             await client.close()
+
+        if last_error is not None:
+            yield sse({"error": last_error})
         yield "data: [DONE]\n\n"
 
     return StreamingResponse(
@@ -600,6 +758,59 @@ async def chat_stream_endpoint(request: StreamChatRequest):
 async def health_check():
     """Health check endpoint"""
     return {"status": "healthy", "model": DEFAULT_MODEL, "status": "running"}
+
+
+@app.get("/health/models")
+async def model_health():
+    """Report the model chain and which models Ollama can actually serve.
+
+    A partially downloaded model is listed by Ollama but answers 404 when it
+    is used, so listing is not enough: every candidate is probed with a
+    one-token request and the result is reported per model.
+    """
+    from llm.client import OllamaClient
+
+    llm_router = LLMRouter()
+    client = OllamaClient(base_url=OLLAMA_BASE_URL)
+    try:
+        installed = await client.list_models()
+    except Exception as exc:  # noqa: BLE001 - report, do not crash
+        return {
+            "status": "degraded",
+            "ollama": {"reachable": False, "error": str(exc)},
+            "models": [],
+        }
+
+    models: List[Dict[str, Any]] = []
+    for model in llm_router.known_models():
+        entry: Dict[str, Any] = {
+            "model": model,
+            "installed": model in installed,
+            "usable": False,
+        }
+        if entry["installed"]:
+            try:
+                await client.chat(
+                    model=model,
+                    messages=[{"role": "user", "content": "ping"}],
+                    max_tokens=1,
+                )
+                entry["usable"] = True
+            except Exception as exc:  # noqa: BLE001 - report, do not crash
+                entry["error"] = str(exc)
+        models.append(entry)
+
+    usable = [m["model"] for m in models if m["usable"]]
+    return {
+        "status": "healthy" if usable else "degraded",
+        "ollama": {"reachable": True, "installed": installed},
+        "models": models,
+        "usable_models": usable,
+        "chains": {
+            task.value: llm_router.get_model_chain(task, language="en")
+            for task in TaskType
+        },
+    }
 
 
 @app.get("/")

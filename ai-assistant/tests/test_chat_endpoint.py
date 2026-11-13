@@ -10,7 +10,7 @@ from fastapi.testclient import TestClient
 
 from llm.client import OllamaClient
 from llm.provider import LLMProviderType, LLMResponse
-from llm.router import LLMRouter, app
+from llm.router import LLMRouter, TaskType, app
 
 client = TestClient(app)
 
@@ -83,8 +83,24 @@ def test_chat_reports_fallback(monkeypatch):
     assert calls == ["deepseek-r1:14b", "gemma4:e2b"]
 
 
+def test_chat_walks_the_chain_when_the_primary_model_is_missing(monkeypatch):
+    """A broken primary model (404 from a partial download) must not fail the
+    request: the router has to fall through to the next model in the chain."""
+    calls = _fake_providers(monkeypatch, fail_models={"gemma4:e2b"})
+    body = client.post(
+        "/chat", json={"message": "hello", "language": "en", "task_type": "general"}
+    ).json()
+
+    assert body["success"] is True
+    assert body["model"] == "deepseek-r1:14b"
+    assert body["fallback_used"] is True
+    assert calls == ["gemma4:e2b", "deepseek-r1:14b"]
+
+
 def test_chat_returns_error_when_all_models_fail(monkeypatch):
-    _fake_providers(monkeypatch, fail_models={"gemma4:e2b"})
+    # Every model in the chain has to fail for the request to fail.
+    chain = LLMRouter().get_model_chain(TaskType.GENERAL, language="en")
+    _fake_providers(monkeypatch, fail_models=set(chain))
     body = client.post(
         "/chat", json={"message": "hello", "language": "en", "task_type": "general"}
     ).json()
@@ -152,8 +168,34 @@ def test_stream_falls_back_when_model_fails(monkeypatch):
     assert text.rstrip().endswith("data: [DONE]")
 
 
-def test_stream_errors_when_no_lighter_model(monkeypatch):
+def test_stream_walks_the_chain_when_the_primary_model_is_missing(monkeypatch):
+    """A missing primary model must not kill the stream: the router falls
+    through to the next model in the chain."""
+
     _fake_providers(monkeypatch, fail_models={"gemma4:e2b"})
+
+    async def failing_stream(self, model, messages, temperature=0.3, max_tokens=None):
+        if model == "gemma4:e2b":
+            raise RuntimeError("model not found")
+        yield ("content", "ok from " + model)
+
+    monkeypatch.setattr(OllamaClient, "chat_stream", failing_stream)
+
+    text = client.post(
+        "/chat/stream",
+        json={"message": "hello", "language": "en", "task_type": "general"},
+    ).text
+
+    assert '"fallback_model": "deepseek-r1:14b"' in text
+    assert "answer from deepseek-r1:14b" in text
+    assert text.rstrip().endswith("data: [DONE]")
+
+
+def test_stream_errors_when_every_model_in_the_chain_fails(monkeypatch):
+    # "No lighter model" means the whole chain is exhausted: a single broken
+    # model is now handled by falling through to the next one.
+    chain = LLMRouter().get_model_chain(TaskType.GENERAL, language="en")
+    _fake_providers(monkeypatch, fail_models=set(chain))
 
     async def failing_stream(self, model, messages, temperature=0.3, max_tokens=None):
         raise RuntimeError("connection refused")

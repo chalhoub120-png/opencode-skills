@@ -232,33 +232,73 @@ class TaskClassifier:
         "قاعدة البيانات",
     ]
 
-    # Words that turn an automation-classified message into a concrete
-    # notification request. Without one of these, a question such as
-    # "what is a webhook?" stays with the agent instead of becoming a row.
+    # Nouns that name the thing being stored. A request needs one of these
+    # (or an explicit reminder phrase below), so a question about the concept
+    # is not turned into a row.
     NOTIFICATION_KEYWORDS = [
         "إشعار",
         "إشعارات",
+        "اشعار",
         "تنبيه",
         "تنبيهات",
         "تذكير",
-        "ذكّرني",
-        "ذكرني",
-        "أبلغني",
-        "بلّغ",
-        "سجّل",
-        "سجل",
-        "أرسل",
-        "ارسل",
-        "أدرج",
-        "أضف",
         "notification",
         "notifications",
         "notify",
-        "remind",
         "reminder",
         "alert",
+    ]
+
+    # Imperative verbs that ask for something to be stored.
+    NOTIFICATION_ACTIONS = [
+        "أرسل",
+        "ارسل",
+        "سجّل",
+        "سجل",
+        "أضف",
+        "اضف",
+        "أدرج",
+        "ادرج",
+        "أنشئ",
+        "انشئ",
+        "بلّغ",
+        "بلغ",
+        "أنبه",
+        "انبه",
         "send",
         "log",
+        "create",
+        "add",
+    ]
+
+    # Phrases that are a complete request on their own.
+    NOTIFICATION_PHRASES = [
+        "ذكّرني",
+        "ذكرني",
+        "أبلغني",
+        "ابلغني",
+        "notify me",
+        "remind me",
+        "alert me",
+    ]
+
+    # Questions ask *about* notifications and must stay with the agent.
+    QUESTION_MARKERS = [
+        "?",
+        "؟",
+        "ما هو",
+        "ما هي",
+        "كيف",
+        "لماذا",
+        "متى",
+        "هل ",
+        "what is",
+        "what are",
+        "how ",
+        "why ",
+        "when ",
+        "explain",
+        "اشرح",
     ]
 
     # Agent selection mapping by task type
@@ -364,17 +404,24 @@ class TaskClassifier:
         return best_task, confidence
 
     @classmethod
-    def is_notification_request(cls, message: str, task_type: TaskType) -> bool:
+    def is_notification_request(
+        cls, message: str, task_type: Optional[TaskType] = None
+    ) -> bool:
         """True when the message explicitly asks for a notification to be stored.
 
-        Both conditions are required: the task must be automation-shaped, and
-        the wording must ask for a notification rather than merely mention an
-        automation concept.
+        The wording decides, not the task classification: a real request such
+        as "ذكّرني بالاجتماع" is classified ``GENERAL``, so requiring
+        ``AUTOMATION`` silently dropped it. A question is excluded instead, so
+        "ما هو الإشعار؟" still goes to the agent.
         """
-        if task_type is not TaskType.AUTOMATION:
-            return False
         text = message.lower()
-        return any(keyword in text for keyword in cls.NOTIFICATION_KEYWORDS)
+        if any(marker in text for marker in cls.QUESTION_MARKERS):
+            return False
+        if any(phrase in text for phrase in cls.NOTIFICATION_PHRASES):
+            return True
+        has_topic = any(keyword in text for keyword in cls.NOTIFICATION_KEYWORDS)
+        has_action = any(action in text for action in cls.NOTIFICATION_ACTIONS)
+        return has_topic and has_action
 
 
 class OpenCodeOrchestrator:

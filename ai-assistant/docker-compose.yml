@@ -97,6 +97,7 @@ services:
       - ./models:/app/models
       - ./scripts:/app/scripts
       - ./dashboard:/app/dashboard
+      - ./api:/app/api
     restart: always
     cap_drop:
       - ALL
