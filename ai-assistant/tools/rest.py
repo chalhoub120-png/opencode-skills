@@ -23,7 +23,9 @@ class RESTTool(BaseTool):
 
     async def _get_client(self) -> httpx.AsyncClient:
         if self._client is None or self._client.is_closed:
-            self._client = httpx.AsyncClient(base_url=self.base_url, timeout=self.timeout)
+            self._client = httpx.AsyncClient(
+                base_url=self.base_url, timeout=self.timeout
+            )
         return self._client
 
     async def close(self) -> None:
@@ -60,10 +62,19 @@ class RESTTool(BaseTool):
             }
         except httpx.HTTPError as exc:
             logger.exception("REST request failed: %s %s", method, path)
-            return {
-                "status": getattr(exc.response, "status_code", None) if hasattr(exc, "response") else None,
+            response = getattr(exc, "response", None)
+            result: Dict[str, Any] = {
+                "status": getattr(response, "status_code", None),
                 "error": str(exc),
             }
+            # Keep the server's own explanation; callers surface it instead of a
+            # generic "Client error '400 Bad Request'".
+            if response is not None:
+                try:
+                    result["body"] = response.json()
+                except Exception:
+                    result["body"] = {"raw": response.text}
+            return result
 
     async def get(
         self,

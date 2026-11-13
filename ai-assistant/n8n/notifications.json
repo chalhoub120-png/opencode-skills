@@ -6,7 +6,7 @@
       "parameters": {
         "httpMethod": "POST",
         "path": "notify-webhook",
-        "responseMode": "lastNode",
+        "responseMode": "responseNode",
         "options": {}
       },
       "id": "a1b2c3d4-0001-4000-8000-000000000001",
@@ -19,13 +19,110 @@
     {
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;\nconst out = [];\nfor (const item of $input.all()) {\n  const body = item.json.body ?? item.json;\n  const userId = body.user_id;\n  const message = body.message;\n  if (typeof userId !== 'string' || !UUID_RE.test(userId)) {\n    throw new Error('user_id must be a UUID');\n  }\n  if (typeof message !== 'string' || message.trim() === '') {\n    throw new Error('message must be a non-empty string');\n  }\n  out.push({\n    json: {\n      user_id: userId,\n      message: message.trim(),\n      type: typeof body.type === 'string' ? body.type : 'info',\n      channel: typeof body.channel === 'string' ? body.channel : 'in_app',\n      received_at: new Date().toISOString()\n    }\n  });\n}\nreturn out;"
+        "jsCode": "const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;\nconst out = [];\nfor (const item of $input.all()) {\n  const body = item.json.body ?? item.json;\n  const userId = body.user_id;\n  const message = body.message;\n  if (typeof userId !== 'string' || !UUID_RE.test(userId)) {\n    out.push({ json: { status: 'invalid', error: 'user_id must be a UUID' } });\n    continue;\n  }\n  if (typeof message !== 'string' || message.trim() === '') {\n    out.push({ json: { status: 'invalid', error: 'message must be a non-empty string' } });\n    continue;\n  }\n  const type = typeof body.type === 'string' && body.type.trim() !== '' ? body.type.trim() : 'info';\n  const channel = typeof body.channel === 'string' && body.channel.trim() !== '' ? body.channel.trim() : 'in_app';\n  if (type.length > 32) {\n    out.push({ json: { status: 'invalid', error: 'type must be 32 characters or fewer' } });\n    continue;\n  }\n  if (channel.length > 32) {\n    out.push({ json: { status: 'invalid', error: 'channel must be 32 characters or fewer' } });\n    continue;\n  }\n  out.push({ json: { status: 'ok', user_id: userId, message: message.trim(), type, channel } });\n}\nreturn out;"
       },
       "id": "a1b2c3d4-0002-4000-8000-000000000002",
       "name": "Validate Payload",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [280, 0]
+      "position": [260, 0]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "b1c2d3e4-0001-4000-8000-000000000001",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "ok",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0003-4000-8000-000000000003",
+      "name": "Is Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [520, 0]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT CASE WHEN u.id IS NULL THEN 'unknown' ELSE 'ok' END AS user_status\nFROM (SELECT '{{ $json.user_id }}'::uuid AS user_id) t\nLEFT JOIN users u ON u.id = t.user_id",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0004-4000-8000-000000000004",
+      "name": "Check User",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.8,
+      "position": [780, -120],
+      "credentials": {
+        "postgres": {
+          "id": "cYKmuMgnZzw3mfam",
+          "name": "Postgres account"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "b1c2d3e4-0002-4000-8000-000000000002",
+              "leftValue": "={{ $json.user_status }}",
+              "rightValue": "ok",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0005-4000-8000-000000000005",
+      "name": "Is Known User?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [1040, -120]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"error\": $json.error || \"user_id does not reference an existing user\" } }}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "id": "a1b2c3d4-0006-4000-8000-000000000006",
+      "name": "Reject 400",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1040, 100]
     },
     {
       "parameters": {
@@ -44,10 +141,10 @@
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "user_id": "={{ $json.user_id }}",
-            "message": "={{ $json.message }}",
-            "type": "={{ $json.type }}",
-            "channel": "={{ $json.channel }}"
+            "user_id": "={{ $('Validate Payload').first().json.user_id }}",
+            "message": "={{ $('Validate Payload').first().json.message }}",
+            "type": "={{ $('Validate Payload').first().json.type }}",
+            "channel": "={{ $('Validate Payload').first().json.channel }}"
           },
           "matchingColumns": [],
           "schema": []
@@ -56,11 +153,11 @@
           "outputColumns": ["*"]
         }
       },
-      "id": "a1b2c3d4-0003-4000-8000-000000000003",
+      "id": "a1b2c3d4-0007-4000-8000-000000000007",
       "name": "Insert Notification",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.8,
-      "position": [560, 0],
+      "position": [1300, -120],
       "credentials": {
         "postgres": {
           "id": "cYKmuMgnZzw3mfam",
@@ -70,6 +167,18 @@
       "retryOnFail": true,
       "maxTries": 3,
       "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0008-4000-8000-000000000008",
+      "name": "Respond 200",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1560, -120]
     }
   ],
   "connections": {
@@ -88,7 +197,65 @@
       "main": [
         [
           {
+            "node": "Is Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Valid?": {
+      "main": [
+        [
+          {
+            "node": "Check User",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reject 400",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check User": {
+      "main": [
+        [
+          {
+            "node": "Is Known User?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Known User?": {
+      "main": [
+        [
+          {
             "node": "Insert Notification",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reject 400",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Notification": {
+      "main": [
+        [
+          {
+            "node": "Respond 200",
             "type": "main",
             "index": 0
           }

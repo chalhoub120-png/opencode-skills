@@ -229,6 +229,36 @@ class TaskClassifier:
         "سير عمل",
         "تكامل",
         "قاعدة بيانات",
+        "قاعدة البيانات",
+    ]
+
+    # Words that turn an automation-classified message into a concrete
+    # notification request. Without one of these, a question such as
+    # "what is a webhook?" stays with the agent instead of becoming a row.
+    NOTIFICATION_KEYWORDS = [
+        "إشعار",
+        "إشعارات",
+        "تنبيه",
+        "تنبيهات",
+        "تذكير",
+        "ذكّرني",
+        "ذكرني",
+        "أبلغني",
+        "بلّغ",
+        "سجّل",
+        "سجل",
+        "أرسل",
+        "ارسل",
+        "أدرج",
+        "أضف",
+        "notification",
+        "notifications",
+        "notify",
+        "remind",
+        "reminder",
+        "alert",
+        "send",
+        "log",
     ]
 
     # Agent selection mapping by task type
@@ -333,6 +363,19 @@ class TaskClassifier:
         confidence = min(confidence, 0.95)
         return best_task, confidence
 
+    @classmethod
+    def is_notification_request(cls, message: str, task_type: TaskType) -> bool:
+        """True when the message explicitly asks for a notification to be stored.
+
+        Both conditions are required: the task must be automation-shaped, and
+        the wording must ask for a notification rather than merely mention an
+        automation concept.
+        """
+        if task_type is not TaskType.AUTOMATION:
+            return False
+        text = message.lower()
+        return any(keyword in text for keyword in cls.NOTIFICATION_KEYWORDS)
+
 
 class OpenCodeOrchestrator:
     """Central orchestrator that routes tasks and aggregates results."""
@@ -404,6 +447,19 @@ class OpenCodeOrchestrator:
 
         # Step 2: Classify the task
         task_type, confidence = self.classifier.classify(message, language, context)
+
+        # Step 2b: An explicit notification request is persisted through the
+        # n8n workflow (notifications table) instead of being answered by an agent.
+        if self.classifier.is_notification_request(message, task_type):
+            return await self._route_notification(
+                user_id=user_id,
+                message=message,
+                conversation_id=conversation_id,
+                project_id=project_id,
+                language=language,
+                start_time=start_time,
+                memory_entries=memory_entries,
+            )
 
         # Step 3: Select model based on task type and language
         model = self.llm_router.select_model(task_type, language=language)
@@ -604,6 +660,68 @@ class OpenCodeOrchestrator:
 
         return aggregated
 
+    async def _route_notification(
+        self,
+        *,
+        user_id: str,
+        message: str,
+        conversation_id: Optional[str],
+        project_id: Optional[str],
+        language: str,
+        start_time: datetime,
+        memory_entries: List[Dict[str, Any]],
+    ) -> OrchestrationResult:
+        """Persist an explicit notification request through the n8n workflow."""
+        result = await self.route_to_n8n(
+            user_id=user_id,
+            payload={
+                "message": message,
+                "type": "notification",
+                "channel": "in_app",
+            },
+        )
+
+        await self._store_conversation(
+            user_id=user_id,
+            conversation_id=conversation_id,
+            project_id=project_id,
+            user_message=message,
+            assistant_response=result.answer,
+            language=language,
+            agent_id="n8n",
+        )
+
+        await self.audit.log(
+            user_id=user_id,
+            action="notification_route",
+            resource="conversation",
+            resource_id=conversation_id,
+            metadata={
+                "success": result.success,
+                "error": result.error,
+                "execution_time_ms": result.execution_time_ms,
+            },
+        )
+
+        if not result.success:
+            return result
+
+        confirmation = (
+            "تم حفظ الإشعار بنجاح."
+            if language.startswith("ar")
+            else "Notification saved."
+        )
+        return OrchestrationResult(
+            success=True,
+            answer=confirmation,
+            language=language,
+            agent_used="n8n",
+            route_decision=result.route_decision,
+            tool_results=result.tool_results,
+            memory_entries=memory_entries,
+            execution_time_ms=result.execution_time_ms,
+        )
+
     async def route_to_n8n(
         self,
         user_id: str,
@@ -648,7 +766,15 @@ class OpenCodeOrchestrator:
         status = result.get("status")
         error = result.get("error")
         if error or (isinstance(status, int) and status >= 400):
-            reason = error or f"n8n webhook returned HTTP {status}"
+            # Prefer the server's explanation (e.g. a validation message) over
+            # httpx's generic "Client error '400 Bad Request'".
+            body = result.get("body")
+            detail = body.get("error") if isinstance(body, dict) else None
+            reason = (
+                detail
+                if isinstance(detail, str) and detail
+                else error or f"n8n webhook returned HTTP {status}"
+            )
             return self._n8n_failure(path, reason, execution_time_ms)
 
         response_body = result.get("body", {})

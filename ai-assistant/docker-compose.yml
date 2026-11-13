@@ -74,8 +74,9 @@ services:
       OLLAMA_BASE_URL: http://host.docker.internal:11434
       DIFY_BASE_URL: http://dify:5001
       N8N_BASE_URL: http://n8n:5678
-      # DATABASE_URL must be set in .env (never hardcoded).
-      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+      # Built from the same secret so the container always reaches the
+      # postgres service; .env holds the host-side URL (127.0.0.1).
+      DATABASE_URL: postgresql://ai:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/ai
       REDIS_URL: redis://redis:6379/0
       QDRANT_URL: http://qdrant:6333
       WHISPER_MODEL: small

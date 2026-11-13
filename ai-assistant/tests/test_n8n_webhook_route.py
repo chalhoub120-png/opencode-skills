@@ -3,10 +3,18 @@
 from __future__ import annotations
 
 import asyncio
+from datetime import datetime, timezone
 
 import pytest
 
-from orchestrator.router import OpenCodeOrchestrator, RouteTarget
+from orchestrator.router import (
+    OpenCodeOrchestrator,
+    OrchestrationResult,
+    RouteDecision,
+    RouteTarget,
+    TaskClassifier,
+    TaskType,
+)
 
 
 class _FakeAudit:
@@ -116,6 +124,21 @@ def test_http_error_becomes_failed_result(orchestrator):
     assert result.tool_results == []
 
 
+def test_rejection_message_from_response_body_is_used(orchestrator):
+    _FakeRESTTool.next_response = {
+        "status": 400,
+        "error": "Client error '400 Bad Request' for url 'http://n8n:5678/webhook/notify-webhook'",
+        "body": {"error": "user_id must be a UUID"},
+    }
+
+    result = asyncio.run(
+        orchestrator.route_to_n8n(user_id="u-1", payload={"message": "hi"})
+    )
+
+    assert result.success is False
+    assert result.error == "user_id must be a UUID"
+
+
 def test_error_without_status_is_still_a_failure(orchestrator):
     _FakeRESTTool.next_response = {"status": None, "error": "connection refused"}
 
@@ -154,3 +177,88 @@ def test_audit_entry_records_webhook_path(orchestrator):
     assert entry["action"] == "n8n_workflow"
     assert entry["resource_id"] == "notify-webhook"
     assert entry["metadata"] == {"payload_keys": ["message"]}
+
+
+def _decision() -> RouteDecision:
+    return RouteDecision(
+        target=RouteTarget.N8N_WORKFLOW,
+        target_name="notify-webhook",
+        confidence=1.0,
+        reasoning="ok",
+        task_type=TaskType.AUTOMATION,
+        model="",
+    )
+
+
+def test_notification_route_stores_conversation_and_confirms(orchestrator, monkeypatch):
+    stored = []
+
+    async def fake_n8n(**kwargs):
+        return OrchestrationResult(
+            success=True,
+            answer='{"id": "row-1"}',
+            language="ar",
+            agent_used=None,
+            route_decision=_decision(),
+            tool_results=[{"workflow": "notify-webhook", "response": {"id": "row-1"}}],
+            execution_time_ms=12.0,
+        )
+
+    async def fake_store(**kwargs):
+        stored.append(kwargs)
+
+    monkeypatch.setattr(orchestrator, "route_to_n8n", fake_n8n)
+    monkeypatch.setattr(orchestrator, "_store_conversation", fake_store)
+
+    result = asyncio.run(
+        orchestrator._route_notification(
+            user_id="u-1",
+            message="سجّل تنبيه",
+            conversation_id="c-1",
+            project_id=None,
+            language="ar",
+            start_time=datetime.now(timezone.utc),
+            memory_entries=[],
+        )
+    )
+
+    assert result.success is True
+    assert result.answer == "تم حفظ الإشعار بنجاح."
+    assert result.agent_used == "n8n"
+    assert stored[0]["agent_id"] == "n8n"
+    assert stored[0]["user_message"] == "سجّل تنبيه"
+    assert orchestrator.audit.calls[-1]["action"] == "notification_route"
+    assert orchestrator.audit.calls[-1]["metadata"]["success"] is True
+
+
+def test_notification_route_failure_is_returned(orchestrator, monkeypatch):
+    async def fake_n8n(**kwargs):
+        return OrchestrationResult(
+            success=False,
+            answer="",
+            language="ar",
+            agent_used=None,
+            route_decision=_decision(),
+            error="user_id must be a UUID",
+        )
+
+    async def fake_store(**kwargs):
+        return None
+
+    monkeypatch.setattr(orchestrator, "route_to_n8n", fake_n8n)
+    monkeypatch.setattr(orchestrator, "_store_conversation", fake_store)
+
+    result = asyncio.run(
+        orchestrator._route_notification(
+            user_id="u-1",
+            message="سجّل تنبيه",
+            conversation_id="c-1",
+            project_id=None,
+            language="ar",
+            start_time=datetime.now(timezone.utc),
+            memory_entries=[],
+        )
+    )
+
+    assert result.success is False
+    assert result.error == "user_id must be a UUID"
